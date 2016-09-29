@@ -113,6 +113,50 @@ img {
   /*margin: 5px auto;*/
 }
 
+/*.silver path{
+	fill: -webkit-radial-gradient(center, circle, rgba(255,255,255,.35), rgba(255,255,255,0) 20%, rgba(255,255,255,0) 21%), -webkit-radial-gradient(center, circle, rgba(0,0,0,.2), rgba(0,0,0,0) 20%, rgba(0,0,0,0) 21%), -webkit-radial-gradient(center, circle farthest-corner, #f0f0f0, #c0c0c0);
+	background-size: 10px 10px, 10px 10px, 100% 100%;
+	background-repeat: repeat, repeat, no-repeat;
+	background-position: 1px 1px, 0px 0px, center center;
+}
+ 
+/* Metal Background with fade */
+ .silver-fade path{
+	fill: -webkit-radial-gradient(center, circle farthest-corner, rgba(255,255,255,0) 50%, rgba(200,200,200,1)), -webkit-radial-gradient(center, circle, rgba(255,255,255,.35), rgba(255,255,255,0) 20%, rgba(255,255,255,0) 21%), -webkit-radial-gradient(center, circle, rgba(0,0,0,.2), rgba(0,0,0,0) 20%, rgba(0,0,0,0) 21%), -webkit-radial-gradient(center, circle farthest-corner, #f0f0f0, #c0c0c0);
+	background-size: 100% 100%, 10px 10px, 10px 10px, 100% 100%;
+	background-repeat: no-repeat, repeat, repeat, no-repeat;
+	background-position: top center, 1px 1px, 0px 0px, top center;
+}
+.sphere-rotating  path {
+  fill: none;
+  stroke-linejoin: round;
+}
+
+.sphere,
+.graticule {
+  stroke: #aaa;
+}
+
+.equator {
+  stroke: red;
+  stroke-width: 2px;
+}
+
+#universe{
+  background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/554945/star-space-tile.jpg);
+  opacity: 0.8;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+
+
+
+
 
 /* ==========================================================================
    Helper classes
