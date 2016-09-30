@@ -141,17 +141,17 @@ img {
   stroke: red;
   stroke-width: 2px;
 }
+tml, body {
+	height: 100%;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background: hsla(240, 10%, 75%, 1);
+  background-image: radial-gradient(top, circle cover, hsla(221, 95%, 75%, 1) 5%, hsla(251, 20%, 17%,1) 90%);
+  width:100%; 
 
-#universe{
-  background: url(https://s3-us-west-2.amazonaws.com/s.cdpn.io/554945/star-space-tile.jpg);
-  opacity: 0.8;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  right: 0;
-  position: absolute;
-  z-index: -1;
-}
+ 
+  
+
 
 
 

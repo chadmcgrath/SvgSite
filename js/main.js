@@ -71,7 +71,8 @@ var page = function () {
     var thisPage = this;    
     var canvas = null;
     var distort = null;
-   this.loadDistortion = function() {
+    var mainSvg = null;
+    this.loadDistortion = function() {
         var el = document.getElementById('svg');
         thisPage.distort = new DVG(el, DVG.STATIC_INTERPOLATION, 4);           
     };
@@ -102,15 +103,19 @@ var page = function () {
             nav.animate({height: navHeight }, 500,  
                 topic.callback.call(this, [topic, subTopics, dest]));       
         }
-        this.reset = function(c, d){
-            var p = thisPage.center.add(d2.vector);  
-            c
-            .transition()
-            .duration(1500)
-            .ease(d.ease)
-            .attr("cx", p.x)
-            .attr("cy", p.y)
-        }
+        
+    }
+    this.reset = function(topic){
+        var c = thisPage.center;
+        var v = topic.vector;
+        topic.shape
+       .attr("data-selected", 0)           
+       .attr({
+           cx: c.x,
+           cy: c.y,                    
+           r:  topic.radius,//function(d) { return r; },
+           transform : function() {return "translate(" + v.x + ", " + v.y+ ")";}    
+       });
     }
     this.topics = []
     this.animate = function(){
@@ -123,8 +128,26 @@ var page = function () {
     
         counter++; // count the step counter one up
     };
-    this.spiral = function(el, r, dr, rotations , v, rMax, delay, isExponential, i)
+    this.spiralNEW = function(group){
+        var c = thisPage.center ;                 
+        //var p = d.vector.unit(); 
+        var rotate = 360 + "," +c.x+ "," + c.y;
+
+        group.data(thisPage.topics).attr(
+            "transform" , function(d) {return "translate(" + d.vector.unit().x + ", " + d.vector.unit().y+ ")";}),
+            group.attr("r", 10)
+        .transition()
+                .duration(1000)
+                .ease("exp")
+                //.attr({r : d.radius})
+                .attr("transform" , function(d) {return "rotate("+rotate+") translate(" + d.vector.x + ", " +d.vector.y+ ")"});
+     
+    }
+    this.spiral = function(begin, topic, r, dr, rotations , v, rMax, delay, isExponential, i)
     {
+        var el = topic.shape;
+        //isExponential = false;
+        el.attr("transform", "translate("+(-v.x)+","+ (-v.y)+")");
         var x = 0, i = 0;
        
         var totalStepRadii = rMax + rMax - r;
@@ -133,22 +156,23 @@ var page = function () {
         var da = dr/ totalStepRadii * 2 *  Math.PI * rotations;  
         if(isExponential === true){
             dr = totalStepRadii/Math.pow(loopCount,2);
-            da = totalStepRadii/Math.pow(loopCount,2);
+            da = totalStepRadii/Math.pow(loopCount,2) * rotations;
         }
-        const px = parseInt(el.attr("cx"));
-        const py= parseInt(el.attr("cy")); 
-        const tr = new utilities.vector(px, py);
+        const px = parseInt(begin.x);
+        const py= parseInt(begin.y); 
         const smallR = parseInt(el.attr("r"));
-
+        const tr = new utilities.vector(px, py);
+       
+        
         requestAnimationFrame(function(){
-            setTimeout(function(){
-                animateSpiral(i, el, r, dr, v, x, da, rMax, smallR, totalStepRadii, isExponential); 
-            }, delay);
+            
+            animateSpiral(i, topic, r, dr, v, x, da, rMax, smallR, totalStepRadii, isExponential); 
+           
         });
 
-        function animateSpiral(i, el, restRadius, dr, v, x, da, rMax, smallR, loopCount, isExponential)
+        function animateSpiral(i, topic, restRadius, dr, v, x, da, rMax, smallR, loopCount, isExponential)
         {
-            
+            var el = topic.shape;
             ++ i;
             x = x + dr;
             var angle = v.angle() + da;
@@ -156,7 +180,7 @@ var page = function () {
             var radius = x;
             if(isExponential){
                 radius = virtualRadius = Math.pow(x, 2);
-                //angle = v.angle() + Math.pow(da, 2);
+                //angle = + Math.pow(da, 2);
             }
             if(virtualRadius >= rMax)  {               
                 var removedRadius = virtualRadius - rMax; 
@@ -171,13 +195,16 @@ var page = function () {
             el.attr("r", cRad);
             el.attr("cx", pos.x);
             el.attr("cy", pos.y); 
-            if(virtualRadius >= loopCount){                             
-                thisPage.popCircle(el, smallR);	
+            if(virtualRadius >= loopCount){  
+                //thisPage.reset(topic);
+                $.when(thisPage.reset(topic))
+                    .then(thisPage.popCircle(el, smallR));
+                	
                 return;
             }
             
             requestAnimationFrame(function(){
-                animateSpiral(i, el, restRadius, dr, v, x, da, rMax, smallR, loopCount, isExponential);
+                animateSpiral(i, topic, restRadius, dr, v, x, da, rMax, smallR, loopCount, isExponential);
             });
         }           
     }
@@ -196,57 +223,68 @@ var page = function () {
         var rad = bigRadius *  1;
         var dr = Math.PI/ count;
         var center = thisPage.center;
-        d3.selectAll(".topicCircle").each(function(d, i){
-            var direction =i%2;
-            if(direction === 0){
-                direction = -1;
-            }  
-            var addMe = new utilities.vector(Math.cos(dr*i), Math.sin(dr*i)).multiply(rad).multiply(direction);
-            var start = center.add(addMe);
-            var end = center.subtract(addMe);
-            var c = d3.select(this);
-            var circleRad = parseInt(c.attr("r"));
-            var small = scaleSmall * circleRad;
-            var big = scaleBig * circleRad;
-            var mid = (big + small)/2;
-            var pathData = [{p:center, s: big, d: 150, e:"linear"}, {p:start, s: mid, d: 250, e:"exp"}, 
-                {p:center, s: small, d: 150, e:"linear"}, {p:end, s: mid, d: 250,e:"exp"}];
-            repeat.call(null, [pathData, rotations, 0]);
-            //thisPage.popCircle(c, circleRad);
-            //d.reset(d, c);
                
-
-            function repeat(args) {
-                var pathData = args[0],  rotations = args[1], i = args[2];  
-                var delay = 0;
-                ++i;
-                var x = i % pathData.length;
-                //var isCentering = i%2;
-                var p = pathData[x];
-                if(i > rotations ){                                       
-                    return;
-                }else if ( i === 1){
-                    delay = Math.random() * 300;
-                }                    
-                c.transition()
+        d3.selectAll(".topicCircle")           
+            .each(function(d, i){
+               
+                var direction = i % 2;
+                if(direction === 0){
+                    direction = -1;
+                }  
+                var addMe = new utilities.vector(Math.cos(dr*i), Math.sin(dr*i)).multiply(rad).multiply(direction);
+                var start = center.add(addMe);
+                var end = center.subtract(addMe);
+                                
+                var c = d3.select(this);
+                var circleRad = parseInt(c.attr("r"));
+                var small = scaleSmall * circleRad;
+                var big = scaleBig * circleRad;
+                var mid = (big + small)/2;
+                var pathData = [{p:start, s: mid, d: 250, e:"exp"}, {p:center, s: small, d: 150, e:"linear"}
+                   , {p:end, s: mid, d: 250,e:"exp"},  {p:center, s: big, d: 150, e:"linear"}];
+                c
+                .transition()
+                .duration(0)
+                .attr({"transform" : "translate(0, 0)"})
+                .each(function(){                              
+                    repeat(pathData, rotations, 0);
+                });
+                         
+                function repeat(pathData, rotations, i) {
+                
+                    var delay = 0;
+               
+                    var x = i % pathData.length;
+                    ++i;
+                    //var isCentering = i%2;
+                    var p = pathData[x];
+                    if(i > rotations ){    
+                        thisPage.reset(c.data()[0]);
+                        return;
+                    }else if ( i === 1){
+                        delay = Math.random() * 300;
+                    }                    
+                    c.transition()
                     .delay(delay)
-                .duration(p.d)
-                .ease("linear")
-                    .attr({
-                        'r': p.s,
-                        'cx': p.p.x,
-                        'cy': p.p.y,                    
-                    })
-                .each("end", function(){
-                    repeat.call(null, [pathData, rotations, i]);
-                });                               
-            }            
-        });
+                    .duration(p.d)
+                    .ease("linear")
+                        //.attr({"transform" : "translate(" + p.p.x + "," + p.p.y + ")"})
+                        .attr({
+                            'r': p.s,
+                            'cx': p.p.x,
+                            'cy': p.p.y,                    
+                        })
+                    .each("end", function(){
+                        repeat( pathData, rotations, i);
+                    
+                    });                               
+                }            
+            });
     }
     this.populateTopics = function (bigRadius, radius) {
 
         var work = new thisPage.topic("Work", "People I've worked with.","blue", radius);
-        work.callback = thisPage.throwItems;
+        work.callback = this.dropToPage;
         this.topics.push(work);
 
         var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "orange", radius);
@@ -311,9 +349,59 @@ var page = function () {
         sunGradient.append("stop")
             .attr("offset", "100%")
             .attr("stop-color", "#FB8933");
+
+        var pageGradient = defs.append("radialGradient")
+        .attr("id", "page-gradient")
+        .attr("cx", "50%")    //The x-center of the gradient, same as a typical SVG circle
+        .attr("cy", "50%")    //The y-center of the gradient
+        .attr("r", "50%");   //The
+        sunGradient.append("stop")
+        .attr("offset", "0%")
+        .attr("stop-color", "#FFF76B");
+        sunGradient.append("stop")
+            .attr("offset", "50%")
+            .attr("stop-color", "#FFF845");
+        sunGradient.append("stop")
+            .attr("offset", "90%")
+            .attr("stop-color", "#FFDA4E");
+        sunGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#FB8933");
+    }
+    this.dropToPage = function(args){
+        var topic = args[0], subTopics = args[1], topics= thisPage.topics;
+        var delays = [];
+        topics.forEach(function(t){
+        
+            var random = Math.random() * 300;
+            setTimeout(function() { drop(t); }, random);       
+        })
+        function followBall()
+        {
+        }
+        function drop(t){
+
+            
+            if(t.id === topic.id){
+                var currentHeight = thisPage.canvasHeight;
+                thisPage.canvasHeight = currentHeight * 2;
+                thisPage.canvas.attr({height : currentHeight * 2});
+                var workDiv = thisPage.canvas.append("div")
+                .attr("id","work")
+                .attr("class","work")
+                .attr("height",this.canvasHeight);
+                //workDiv.attr("class","work");;
+                followBall(t);
+            }
+            t.shape
+                .transition()
+                .duration(750)
+                .ease("easeOutBounce")
+                .attr({"transform" : "translate(0, " + thisPage.canvasHeight * 1.5 + ")"})
+        }
     }
     //https://codepen.io/leegunn/pen/grJLxY
-    this.wormHole = function (args)
+    this.wormHoleOLD = function (args)
     {
         
         const NUMBER_OF_CIRCLES = 100;
@@ -350,7 +438,7 @@ var page = function () {
             var scale = "scale(" + this.scaleLevel + ", " + this.scaleLevel + ")";
 
             var t = translate + " " + scale;
-            this.element.setAttribute('transform', t);
+            this.element.attributes[2].value = t;//('transform', t);
   
             //this.element.style.transform = translate + " " + scale;
         };
@@ -377,73 +465,70 @@ var page = function () {
         // Keep track of the pointer
         window.onmousemove = function(event)
         {
-            if(audio == null)
-            {
-                loadAudio();
-            }
+            //if(audio == null)
+            //{
+            //    loadAudio();
+            //}
   
             targetX = event.clientX;
             targetY = event.clientY;
         };
 
-        function loadAudio()
-        {
-            audio = new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/554945/space.mp3');
-            audio.loop = true;
-            audio.volume = 0.2;
-            audio.play();
-        }
+        //function loadAudio()
+        //{
+        //    audio = new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/554945/space.mp3');
+        //    audio.loop = true;
+        //    audio.volume = 0.2;
+        //    audio.play();
+        //}
 
         function buildTunnel(count)
         { 
-            var original = document.getElementsByClassName('circle-tunnel')[0];
+
+            
+            
             var svg = document.getElementById('mainGroup');
-  
+            var original = thisPage.canvas.append('path')
+                .attr("class", "circle-tunnel")
+                .attr("d", "M0,0V500H500V0ZM250,287a37,37,0,1,1,37-37A37,37,0,0,1,250,287Z");
+            
+            
+            
             for(var i = 0; i < count; i++)
             {
-                var element = original.cloneNode(true);
+                var element = original[0][0].cloneNode(true);
                 svg.appendChild(element);
-    
+                var scale = Math.pow(SCALE, i + 1);
                 var circle = new Circle(element);
-                circle.scale(Math.pow(SCALE, i + 1));
+                
                 circle.setHue(i * 5 % 360);
     
                 var box = circle.element.getBBox();
-                var x = targetX - box.width * (circle.scaleLevel) / 2;
-                var y = targetY - box.height * (circle.scaleLevel) / 2;
-    
+                circle.box = box;               
+                var x = targetX - box.width * (scale) / 2;
+                var y = targetY - box.height * (scale) / 2;
+                circle.x = x;
+                circle.y = y;
+                var t = "translate(" + x +  ", " + y + ")";
+                circle.element.setAttribute('transform', t);
                 circle.translate(x, y);
-
+                circle.scale(scale);
                 circles.push(circle);
             }
  
-            svg.removeChild(original);
+            original.remove();
         }
 
-        var oldVolume = 0.2;
+        //var oldVolume = 0.2;
 
         function warp()
         { 
             // Twinkling stars
-            universe.style.opacity = Math.random() * (1 - 0.75) + 0.75;
+            //universe.style.opacity = Math.random() * (1 - 0.75) + 0.75;
   
             // Move the stars when flying
-            universe.style.backgroundPosition = -targetX + "px " + -targetY + "px";
-  
-            // NOTE: I'm sure this volumne calculation could be neater!
-            if(audio != null)
-            {
-                var vol = Math.min(Math.abs(oldTargetX - targetX), 90) / 100;
- 
-                // Smoothe out the volume transition
-                vol = oldVolume + ((vol - oldVolume) / 10);
-    
-                audio.volume = Math.max(vol, 0.1);
- 
-                // Store the new volume
-                oldVolume = audio.volume;
-            }
-  
+            //universe.style.backgroundPosition = -targetX + "px " + -targetY + "px";
+                
             // Store the new target
             oldTargetX = targetX;
             oldTargetY = targetY;
@@ -452,11 +537,11 @@ var page = function () {
             {
                 var circle = circles[i];
     
-                var box = circle.element.getBBox();
+                var box = circle.box;
     
                 // Work out the transforms
-                x2 = targetX - box.width * (circle.scaleLevel) / 2;
-                y2 = targetY - box.height * (circle.scaleLevel) / 2;
+                var x2 = targetX - box.width * (circle.scaleLevel) / 2;
+                var y2 = targetY - box.height * (circle.scaleLevel) / 2;
 
                 // Smoothe it out a little
                 var speed = (i + 1) * DELAY;
@@ -465,14 +550,15 @@ var page = function () {
  
                 circle.translate(x2, y2);
  
-                circle.setHue((circle.hue - 5) % 360);
+                //circle.setHue((circle.hue - 5) % 360);
+                window.requestAnimationFrame(warp);
             }
         }
 
  
         buildTunnel(NUMBER_OF_CIRCLES);
 
-        setInterval(function(){ warp(); counter++; }, 50);
+        window.requestAnimationFrame(warp);
 
  
     }
@@ -484,7 +570,7 @@ var page = function () {
         var c = thisPage.center;
         var scale = .1;
         var items = d3.selectAll("g").filter(function (d, i) 
-            { return this.id != "mainGroup" && this.id != "topicCircles"});
+        { return this.id != "mainGroup" && this.id != "topicCircles"});
         //var g = d3.select("#mainGroup");
         //var el = g[0][0];
         //var box = el.getBBox();
@@ -492,13 +578,13 @@ var page = function () {
         var translate = (c.x) +"," + (c.y) ;
         //var translate = 0 + "," + 0;
         items.each(function(d, i){   
-        var item =  d3.select(this)
-            .transition()
+            var item =  d3.select(this)
+                .transition()
                 
-        .duration(500)
-        .ease("exp")
-        .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
-        .each("end", function(){thisPage.wormHole.call(this, args);});	
+            .duration(500)
+            .ease("exp")
+            .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
+            //.each("end", function(){thisPage.wormHole.call(this, args);});	
         });  
         var topics = d3.selectAll(".topicCircle")
         topics.each(function(d, i){  
@@ -518,45 +604,7 @@ var page = function () {
             
         });
 
-        thisPage.wormHole();
-        ////Gear.updateGears(thisPage.gears);
-
-       
-    }
-
-    this.blackHoleOLD = function(args)
-    {
-        thisPage.gearTimer.stop();
-        var t = args[0];
-        var c = thisPage.center;
-       // var items = d3.selectAll("g").filter(function (d, i) { return this.id === "topicCircles";});
-        var g = d3.select("#mainGroup");
-        var el = g[0][0];
-        var box = el.getBBox();
-        var scale = .1;
-        var translate = (c.x - box.width/2 * scale) +"," + (c.y - box.height/2 * scale) ;
-        //var translate = 0 + "," + 0;
-            g 
-                .transition()
-                
-            .duration(5000)
-            .ease("exp")
-            .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
-                //"transform" : "translate(" + c.x + "," + c.y + ")"});
-            
-        //topics = d3.selectAll("topicCircle")
-        //topics.each(function(d, i){   
-        //    var el =  d3.select(this);
-        //    var translate = 0 + "," + 0;
-        //    el 
-        //        .transition()
-                
-        //    .duration(5000)
-        //    .ease("exp")
-        //    .attr({"transform" : "translate(" + translate + ") scale(.1) "})
-        //    //"transform" : "translate(" + c.x + "," + c.y + ")"});
-            
-        //});
+        // thisPage.wormHole();
         ////Gear.updateGears(thisPage.gears);
 
        
@@ -596,7 +644,7 @@ var page = function () {
     }
     this.isWithinBox= function(el, p)
     {
-        if(el.x <= p.x && el.x + el.width > p.x && el.y <= p.y && el.y + el.height >= p.y)
+        if(el.left <= p.x && el.right > p.x && el.top <= p.y && el.bottom >= p.y)
             return true;
         return false;
     }
@@ -616,6 +664,7 @@ var page = function () {
         .append("circle")
         .attr("class", function(d){ return "topicCircle"; })
         .attr("id", function(d){ return d.id; })
+        .attr("data-selected", 0)
         .attr({
             cx: x,
             cy: y,
@@ -625,11 +674,11 @@ var page = function () {
         })
         .on("click", function(d){  
             var c = d3.select(this);
-            var rect = this.getBoundingClientRect();
-                      
+            
             var center = thisPage.center;
-            if(thisPage.isWithinBox(rect, center))
+            if(c.attr("data-selected") == 1)
             {
+                c.attr("data-selected", 0);
                 thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .40, .04);
                 return;
             }
@@ -642,6 +691,7 @@ var page = function () {
                     .duration(1500)
                     .ease(d2.ease)
                     .attr({"transform" : "translate(" + translate + ")"})
+                    .attr("data-selected", 0)
                     
                 }                    
             });
@@ -651,20 +701,22 @@ var page = function () {
                 .duration(250)
                 .ease(d.ease)
                 .attr({"transform" : "translate(" + translate + ")"})
-                .attr("selected", 1)
+                .attr("data-selected", 1)
 				.each("end", d.topicClick);	
         }) 
         //brittle
         var circles = thisPage.canvas.selectAll(".topicCircle")[0];
         var count = thisPage.topics.length;
+       
         for(var i = 0; i < count; ++i)
         {
             const topic = thisPage.topics[i];
             topic.shape = d3.select(circles[i]);
                 
-            //thisPage.spiral(topic.shape, bigRadius, bigRadius/32, 
-            //    1, topic.vector.unit(), bigRadius, 0, true);
-        }
+            thisPage.spiral(thisPage.center, topic, bigRadius, bigRadius/32, 
+                1.20, topic.vector.unit(), bigRadius, 0, true);
+        }       
+        //thisPage.spiral(d3.selectAll(".topicCircle"));
         
         function subTopic(name, width, height){
             this.name = name,
@@ -815,7 +867,7 @@ var page = function () {
             });
     }
     this.startGears = function(gears){        
-       thisPage.gearTimer = d3.timer(function () {
+        thisPage.gearTimer = d3.timer(function () {
             thisPage.canvas.selectAll('.gear-path')
                 .attr('transform', function (d) {
                     d.angle += d.speed;
@@ -897,14 +949,16 @@ var page = function () {
         thisPage.populateGradients(defs, thisPage.topics);
         thisPage.createTopicShapes(bigRadius, topicRadius);
 
-        
+    
 
         var sphere = thisPage.createSphere(1, c.x, c.y, 100, 100, .1, 0, 10, 0);
         thisPage.sphere = sphere;
+
+
     }
    
 }
 
-    var utilities = new utilities();
-    var windowPage = new page();
-    //windowPage.initialize();
+var utilities = new utilities();
+var windowPage = new page();
+//windowPage.initialize();
