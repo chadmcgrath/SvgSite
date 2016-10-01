@@ -78,8 +78,12 @@ var page = function () {
     };
     this.canvasWidth = window.innerWidth;
     this.canvasHeight = window.innerHeight;
+    this.changeHeight = function(h){
+        thisPage.mainSvg.attr({height : h});
+        thisPage.canvas.attr({height : h});
+        thisPage.canvasHeight = h;
+    }
     this.center = new utilities.vector(parseInt(window.innerWidth/2), parseInt(window.innerHeight/2));
-
     this.topic = function(name, description, color, radius){
         var topic = this;
         this.id = name,
@@ -105,10 +109,21 @@ var page = function () {
         }
         
     }
-    this.reset = function(topic){
+    this.resetAll = function(topic, duration, setGears){
+        thisPage.changeHeight(window.innerHeight);
+        d3.selectAll(".gear").attr("visibility", "visible");
+        if(!duration)
+            duration = 0;
         var c = thisPage.center;
         var v = topic.vector;
+        
         topic.shape
+            .transition()
+            .duration(duration)
+            .ease("exp")
+            .each("end", function(){
+                thisPage.popCircle(topic.shape, topic.radius);
+        })
        .attr("data-selected", 0)           
        .attr({
            cx: c.x,
@@ -116,7 +131,19 @@ var page = function () {
            r:  topic.radius,//function(d) { return r; },
            transform : function() {return "translate(" + v.x + ", " + v.y+ ")";}    
        });
+        if(setGears){
+            thisPage.setGears(thisPage.gears, setGears, 0);
+        }
     }
+    this.stretch = function(heightDiff){
+        var newHeight = this.canvasHeight + heightDiff;
+        //var stretchGroup = thisPage.canvas.append("g")
+        //.attr("id","stretch")
+        //.attr("class","stretch")
+        //.attr("height", heightDiff);
+        thisPage.changeHeight(newHeight);
+    }
+   
     this.topics = []
     this.animate = function(){
         if(path.getTotalLength() <= counter){   //break as soon as the total length is reached
@@ -196,9 +223,9 @@ var page = function () {
             el.attr("cx", pos.x);
             el.attr("cy", pos.y); 
             if(virtualRadius >= loopCount){  
-                //thisPage.reset(topic);
-                $.when(thisPage.reset(topic))
-                    .then(thisPage.popCircle(el, smallR));
+                thisPage.resetAll(topic);
+                //$.when(thisPage.reset(topic))
+                //    .then(thisPage.popCircle(el, smallR));
                 	
                 return;
             }
@@ -259,7 +286,7 @@ var page = function () {
                     //var isCentering = i%2;
                     var p = pathData[x];
                     if(i > rotations ){    
-                        thisPage.reset(c.data()[0]);
+                        thisPage.resetAll(c.data()[0]);
                         return;
                     }else if ( i === 1){
                         delay = Math.random() * 300;
@@ -368,38 +395,120 @@ var page = function () {
             .attr("offset", "100%")
             .attr("stop-color", "#FB8933");
     }
+    this.globeSwallow = function(){
+        var sphere = thisPage.sphere;
+    }
     this.dropToPage = function(args){
         var topic = args[0], subTopics = args[1], topics= thisPage.topics;
-        var delays = [];
-        topics.forEach(function(t){
-        
-            var random = Math.random() * 300;
-            setTimeout(function() { drop(t); }, random);       
-        })
-        function followBall()
-        {
-        }
-        function drop(t){
+        getSubTopics();
+        var duration = 750;
+        var originalHeight = thisPage.canvasHeight;
+        thisPage.stretch(originalHeight);
+        var ease = d3.easeBounce;
 
-            
-            if(t.id === topic.id){
-                var currentHeight = thisPage.canvasHeight;
-                thisPage.canvasHeight = currentHeight * 2;
-                thisPage.canvas.attr({height : currentHeight * 2});
-                var workDiv = thisPage.canvas.append("div")
-                .attr("id","work")
-                .attr("class","work")
-                .attr("height",this.canvasHeight);
-                //workDiv.attr("class","work");;
-                followBall(t);
+        d3.selectAll(".topicCircle").each(function(d, i){ 
+            var delay = Math.random() * 400;
+            if(this.id == topic.Id){
+                delay = 0;
             }
-            t.shape
+            scroll(document.body.getBoundingClientRect().height - window.innerHeight, ease);
+            var v = d.vector;           
+            var translate = v.x + ", " + (thisPage.canvasHeight * .75 - d.radius) ;  
+            
+            d3.select(this)                
                 .transition()
-                .duration(750)
-                .ease("easeOutBounce")
-                .attr({"transform" : "translate(0, " + thisPage.canvasHeight * 1.5 + ")"})
+                .delay(delay) 
+                .duration(duration)
+                .ease(ease)
+                .attr({"transform" : "translate(" + translate + ")"})
+                .attr("data-selected", 0)
+                .transition()
+                .delay(1000) 
+            .each("end", function(){
+                var resetSpeed = 250;
+                scroll(document.body.getBoundingClientRect().height - window.innerHeight, "exp");
+                thisPage.resetAll(d, duration, true);
+                d3.selectAll(".gear").attr("visibility", "hidden");
+            });
+                               
+        });
+        function scroll(y, e)
+        {
+            d3.transition()
+           .delay(0)
+           .duration(duration)
+                .ease(e)
+           .tween("scroll", scrollTween(y))
+
+            function scrollTween(offset) {
+                return function() {
+                    var i = d3.interpolateNumber(window.pageYOffset || document.documentElement.scrollTop, offset);
+                    return function(t) { scrollTo(0, i(t)); };
+                };
+            }
+        } 
+        
+        function getSubTopics()
+        {
+
+            var workTopic = function(name, link, image){
+                this.name = name;
+                this.link = link;
+                this.image = image;           
+            }
+            var list = [];
+            var folder ="img\\logos\\";
+
+            //list.push(new workTopic("allergan"));
+            //list.push(new workTopic("cme"));
+            list.push(new workTopic("doe"));
+            //list.push(new workTopic("kfc"));
+            //list.push(new workTopic("tacobell"));
+            //list.push(new workTopic("latisse"));
+            //list.push(new workTopic("mnr"));
+            //list.push(new workTopic("natrelle"));
+            //list.push(new workTopic("nissan"));
+            //list.push(new workTopic("shell"));
+            //list.push(new workTopic("telegraph"));
+            //list.push(new workTopic("ipc"));
+
+            var imgs = thisPage.canvas.selectAll("image").data(list);
+            imgs.enter()
+            .append("svg:image")
+            .attr("xlink:href", function(d){ return  folder + d.name +".jpg"})
+                .attr("x", "60")
+                .attr("y", "60")
+            .attr("width", "200")
+            .attr("height", "200");
         }
+
+        //list.forEach(function(item, i){
+
+        //});
+
+        
+        //function getSubTopics(){
+        //    var folder ="img/logos/";           
+        //    $.ajax({
+        //        url : folder,
+        //        success: function (data) {
+        //            $(data).find("a").attr("href", function (i, val) {
+        //                if( val.match(/\.(jpe?g|png|gif)$/) ) { 
+        //                    var imgs = svg.selectAll("image").data([0]);
+        //                    imgs.enter()
+        //                    .append("svg:image")
+        //                    .attr("xlink:href", folder + d)
+        //                        .attr("x", "60")
+        //                        .attr("y", "60")
+        //                        .attr("width", "20")
+        //                        .attr("height", "20");
+        //                }
+        //            })
+        //        }
+        //    });
+        //}
     }
+    
     //https://codepen.io/leegunn/pen/grJLxY
     this.wormHoleOLD = function (args)
     {
@@ -838,7 +947,7 @@ var page = function () {
 
         return gears;
     } 
-    this.setGears = function(gears, transition, callback){  
+    this.setGears = function(gears, transition, duration){  
         var placed = gears[0];
         
         //gears = Gear.Utility.arrayShuffle(gears);
@@ -854,7 +963,7 @@ var page = function () {
                         .transition()
                         .ease('elastic')
                         .delay(i * 80 + Math.random() * 80)
-                        .duration(1000)
+                        .duration(duration)
                         .attr('transform', function(d) {
                             return 'translate(' + [ d.x, d.y ] + ')';
                         });
@@ -876,19 +985,18 @@ var page = function () {
         });
         Gear.updateGears(gears);
     }
-    this.createSphere = function(id, x, y, w, h, vx, vy, rx, ry)
+    this.createSphere = function(id, x, y, scale, vx, vy, vz, rx, ry, rz)
     {
-        var width = w,
-        height = h,
-        rotate = [rx, ry],
-        velocity = [vx, vy],
+        var 
+        rotate = [rx, ry, rz],
+        velocity = [vx, vy, vz],
         time = Date.now(),
         svg = thisPage.canvas;
 
         var projection = d3.geo.orthographic()
-            .scale(100)
+            .scale(scale)
             .translate([x, y])
-            .clipAngle(90 + 1e-6)
+            //.clipAngle(90 + 1e-6)
             .precision(.3);
 
         var path = d3.geo.path()
@@ -913,13 +1021,14 @@ var page = function () {
         g.append("path")
             .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
             .attr("class", "equator")
+            .attr("stroke-width", "22")
             .attr("d", path);
 
         var sphere = svg.selectAll("#sphere-rotating-" + id +" path");
 
         d3.timer(function() {
             var dt = Date.now() - time;
-            projection.rotate([rotate[0] + velocity[0] * dt, rotate[1] + velocity[1] * dt]);
+            projection.rotate([rotate[0] + velocity[0] * dt, rotate[1] + velocity[1] * dt, rotate[2] + velocity[2] * dt]);
             sphere.attr("d", path);
         });
         return sphere;
@@ -942,19 +1051,29 @@ var page = function () {
         var topicRadius = Math.round(bigRadius/4);
 
         var gears = thisPage.createGears(bigRadius, topicRadius);
-        thisPage.setGears(gears, true);
-        thisPage.startGears(gears);
-        thisPage.gears = gears;
+
         thisPage.populateTopics(bigRadius, topicRadius);
         thisPage.populateGradients(defs, thisPage.topics);
         thisPage.createTopicShapes(bigRadius, topicRadius);
+        thisPage.setGears(gears, true, 800);
+        thisPage.startGears(gears);
+        thisPage.gears = gears;
+        
 
     
 
-        var sphere = thisPage.createSphere(1, c.x, c.y, 100, 100, .1, 0, 10, 0);
+        var sphere1 = thisPage.createSphere(1, c.x, c.y, 180,  0, .25 ,0,
+         0, 0 , 90);
+        var sphere2 = thisPage.createSphere(2, c.x, c.y, 180, 0, .2, 0,
+        0, 90,0);
+        var sphere3 = thisPage.createSphere(3, c.x, c.y, 180, 0, .3, 0,
+            0 ,0, 45);
         thisPage.sphere = sphere;
 
-
+       // var sphere2 = thisPage.createSphere(2, c.x, c.y, 100,  0, .1, 0,
+       //0, 0,0);
+       // var sphere3 = thisPage.createSphere(3, c.x, c.y, 100,  0, .1, 0,
+       //     0 ,0, 45);
     }
    
 }

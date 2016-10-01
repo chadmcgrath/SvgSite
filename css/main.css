@@ -138,8 +138,8 @@ img {
 }
 
 .equator {
-  stroke: red;
-  stroke-width: 2px;
+  stroke: black;
+ 
 }
 tml, body {
 	height: 100%;
@@ -148,7 +148,12 @@ tml, body {
   background: hsla(240, 10%, 75%, 1);
   background-image: radial-gradient(top, circle cover, hsla(221, 95%, 75%, 1) 5%, hsla(251, 20%, 17%,1) 90%);
   width:100%; 
-
+}
+.work
+{
+	display:none;
+	color
+}
  
   
 
