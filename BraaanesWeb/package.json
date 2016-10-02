@@ -1,0 +1,21 @@
+{
+  "name": "Brains",
+  "version": "1.0.0",
+  "description": "NodejsZombies",
+  "main": "Brains.html",
+  "author": {
+    "name": "Chad"
+    
+  },
+  "window": {
+    "title": "b5nw",
+    "width": 2000,
+    "height":2000,
+    "position": "center",
+    "resizable": true,
+    "toolbar": true,
+    "frame": true,
+    "fullscreen": false
+
+  } 
+}

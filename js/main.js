@@ -381,7 +381,7 @@ var page = function () {
         .attr("id", "page-gradient")
         .attr("cx", "50%")    //The x-center of the gradient, same as a typical SVG circle
         .attr("cy", "50%")    //The y-center of the gradient
-        .attr("r", "50%");   //The
+        .attr("r", "30%");   //The
         sunGradient.append("stop")
         .attr("offset", "0%")
         .attr("stop-color", "#FFF76B");
@@ -482,11 +482,6 @@ var page = function () {
             .attr("height", "200");
         }
 
-        //list.forEach(function(item, i){
-
-        //});
-
-        
         //function getSubTopics(){
         //    var folder ="img/logos/";           
         //    $.ajax({
@@ -985,23 +980,24 @@ var page = function () {
         });
         Gear.updateGears(gears);
     }
-    this.createSphere = function(id, x, y, scale, vx, vy, vz, rx, ry, rz)
+    
+    this.createSphere = function(id, x, y, scale, vx, vy, vz, rx, ry, rz, hasGrat)
     {
-        var 
-        rotate = [rx, ry, rz],
-        velocity = [vx, vy, vz],
+        var rotate = [rx, ry, rz],         
         time = Date.now(),
         svg = thisPage.canvas;
-
-        var projection = d3.geo.orthographic()
+        self = this;
+        this.velocity = [vx, vy, vz];
+        this.scale = scale;
+        this.projection = d3.geo.orthographic()
             .scale(scale)
             .translate([x, y])
             //.clipAngle(90 + 1e-6)
             .precision(.3);
 
+        var projection = this.projection;
         var path = d3.geo.path()
             .projection(projection);
-
         var graticule = d3.geo.graticule();
 
         var g = svg.append("g")
@@ -1012,28 +1008,96 @@ var page = function () {
             .datum({type: "Sphere"})
             .attr("class", "sphere" )
             .attr("d", path);
-
-        g.append("path")
-            .datum(graticule)
-            .attr("class", "graticule")
-            .attr("d", path);
-
+        if(hasGrat)
+        {
+            g.append("path")
+                .datum(graticule)
+                .attr("class", "graticule")
+                .attr("d", path);
+        }
+        this.strokeWdith = 22;
         g.append("path")
             .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
             .attr("class", "equator")
-            .attr("stroke-width", "22")
+            .attr("stroke-width", 22)
             .attr("d", path);
 
         var sphere = svg.selectAll("#sphere-rotating-" + id +" path");
 
-        d3.timer(function() {
+        var timer = d3.timer(function() {
+            var velocity = self.velocity;
             var dt = Date.now() - time;
-            projection.rotate([rotate[0] + velocity[0] * dt, rotate[1] + velocity[1] * dt, rotate[2] + velocity[2] * dt]);
+            projection.rotate([rotate[0] + velocity[0] * dt , rotate[1] + velocity[1] * dt  , rotate[2] + velocity[2] * dt ]);
             sphere.attr("d", path);
         });
-        return sphere;
+        return this;
     }  
+    this.createSphere.prototype.velocity =[];
+    this.createSphere.prototype.strokeWidth = 22;
+    this.createRings = function(c, fill){
+        var s = [];
 
+        var sphere1 = new thisPage.createSphere(1, c.x, c.y, 1100,  0, .06 ,0,
+        0, 0 , 90, false);
+        var sphere2 = new thisPage.createSphere(2, c.x, c.y, 1150, 0, .05, 0,
+        0, 90,0, false);
+        var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1150, 0, .08, 0,
+            0 ,0, 0, true);
+
+
+       // var sphere1 = new thisPage.createSphere(1, c.x, c.y, 1100,  0, .08 ,0,
+       //  0, 0 , 90, false);
+       // var sphere2 = new thisPage.createSphere(2, c.x, c.y, 1150, 0, .12, 0,
+       //0, 90,0, false);
+       // var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1150, 0, 0, .1,
+       //     0 ,10, 45, true);
+        s.push(sphere1);
+        s.push(sphere2);
+        s.push(sphere3);
+        return s;
+    }
+    this.ringPort = function(c){
+
+        var spheres = thisPage.createRings(c);
+        d3.selectAll(".sphere-rotating").data(spheres)
+            .each(function(d, i){  
+                    
+            var ring = d3.select(this);
+            var scale = d.scale;
+            var speed = Math.max.apply(null, d.velocity);
+            ring
+            .transition()
+            .duration(1000)
+            .ease(d3.easeExpIn)
+            .tween("scaleChange", function() {
+                var i = d3.interpolate(scale, scale/5);
+                return function(t) {
+                    d.projection.scale(i(t));
+                };
+                                         
+            })
+           
+            //.transition()
+            //.delay(200)
+            //.duration(5000)
+            //.ease(d3.easeLinear)
+            //.tween("rotationSpeed", function() {
+            //    var i = d3.interpolate(speed, speed * 5);
+                
+            //    return function(t) {
+            //        var newV = d.velocity.map(function(x) { return x * i(t); });
+            //        d.velocity = newV;
+            //    };
+                                             
+            // });
+                    
+                               
+        });
+
+
+
+        d3.selectAll(".gear").attr("visibility", "hidden");
+    }
     this.initialize = new function () {
         
         var c = thisPage.center;
@@ -1059,22 +1123,24 @@ var page = function () {
         thisPage.startGears(gears);
         thisPage.gears = gears;
         
-
-    
-
-        var sphere1 = thisPage.createSphere(1, c.x, c.y, 180,  0, .25 ,0,
-         0, 0 , 90);
-        var sphere2 = thisPage.createSphere(2, c.x, c.y, 180, 0, .2, 0,
-        0, 90,0);
-        var sphere3 = thisPage.createSphere(3, c.x, c.y, 180, 0, .3, 0,
-            0 ,0, 45);
-        thisPage.sphere = sphere;
+        thisPage.ringPort(c);
+        
+       // thisPage.sphere = sphere;
 
        // var sphere2 = thisPage.createSphere(2, c.x, c.y, 100,  0, .1, 0,
        //0, 0,0);
        // var sphere3 = thisPage.createSphere(3, c.x, c.y, 100,  0, .1, 0,
-       //     0 ,0, 45);
+        //     0 ,0, 45);
+
+        //var sphere1 = thisPage.createSphere(1, c.x, c.y, 120,  0, .1 ,0,
+        // 0, 0 , 90);
+        //var sphere2 = thisPage.createSphere(2, c.x, c.y, 180, 0, .05, 0,
+        //0, 90,0);
+        //var sphere3 = thisPage.createSphere(3, c.x, c.y, 180, 0, .1, 0,
+        //    0 ,0, 45);
     }
+    
+    
    
 }
 
