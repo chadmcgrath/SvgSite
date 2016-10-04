@@ -503,169 +503,7 @@ var page = function () {
         //    });
         //}
     }
-    
-    //https://codepen.io/leegunn/pen/grJLxY
-    this.wormHoleOLD = function (args)
-    {
-        
-        const NUMBER_OF_CIRCLES = 100;
-        const SCALE = 1.05;
-        const DELAY = 1.3;
 
-        var audio = null;
-        var universe = document.getElementById('universe');
-
-        var targetX = window.innerWidth / 2;
-        var targetY = window.innerHeight / 2;
-
-        //var twitter = document.getElementById('twitter');
-        //twitter.style.left = targetX - (twitter.clientWidth / 2) + "px";
-        //twitter.style.top = targetY - (twitter.clientHeight / 2) + "px";
-
-        var oldTargetX = targetX;
-        var oldTargetY = targetY;
-        var counter = 0;
-        var circles = [];
-
-        var Circle = function(element)
-        {
-            this.element = element;
-            this.hue = null;
-            this.x = null;
-            this.y = null;
-            this.scaleLevel = 1;
-        };
-
-        Circle.prototype.transform = function()
-        {  
-            var translate = "translate(" + this.x +  ", " + this.y + ")";
-            var scale = "scale(" + this.scaleLevel + ", " + this.scaleLevel + ")";
-
-            var t = translate + " " + scale;
-            this.element.attributes[2].value = t;//('transform', t);
-  
-            //this.element.style.transform = translate + " " + scale;
-        };
-
-        Circle.prototype.scale = function(scale)
-        { 
-            this.scaleLevel = scale;
-            this.transform();
-        }
-
-        Circle.prototype.translate = function(x, y)
-        { 
-            this.x = x;
-            this.y = y;
-            this.transform();
-        }
-
-        Circle.prototype.setHue = function(hue)
-        {
-            this.hue = hue;
-            this.element.style.fill = 'hsl(' + hue + ', 80%, 40%)';
-        };
-
-        // Keep track of the pointer
-        window.onmousemove = function(event)
-        {
-            //if(audio == null)
-            //{
-            //    loadAudio();
-            //}
-  
-            targetX = event.clientX;
-            targetY = event.clientY;
-        };
-
-        //function loadAudio()
-        //{
-        //    audio = new Audio('https://s3-us-west-2.amazonaws.com/s.cdpn.io/554945/space.mp3');
-        //    audio.loop = true;
-        //    audio.volume = 0.2;
-        //    audio.play();
-        //}
-
-        function buildTunnel(count)
-        { 
-
-            
-            
-            var svg = document.getElementById('mainGroup');
-            var original = thisPage.canvas.append('path')
-                .attr("class", "circle-tunnel")
-                .attr("d", "M0,0V500H500V0ZM250,287a37,37,0,1,1,37-37A37,37,0,0,1,250,287Z");
-            
-            
-            
-            for(var i = 0; i < count; i++)
-            {
-                var element = original[0][0].cloneNode(true);
-                svg.appendChild(element);
-                var scale = Math.pow(SCALE, i + 1);
-                var circle = new Circle(element);
-                
-                circle.setHue(i * 5 % 360);
-    
-                var box = circle.element.getBBox();
-                circle.box = box;               
-                var x = targetX - box.width * (scale) / 2;
-                var y = targetY - box.height * (scale) / 2;
-                circle.x = x;
-                circle.y = y;
-                var t = "translate(" + x +  ", " + y + ")";
-                circle.element.setAttribute('transform', t);
-                circle.translate(x, y);
-                circle.scale(scale);
-                circles.push(circle);
-            }
- 
-            original.remove();
-        }
-
-        //var oldVolume = 0.2;
-
-        function warp()
-        { 
-            // Twinkling stars
-            //universe.style.opacity = Math.random() * (1 - 0.75) + 0.75;
-  
-            // Move the stars when flying
-            //universe.style.backgroundPosition = -targetX + "px " + -targetY + "px";
-                
-            // Store the new target
-            oldTargetX = targetX;
-            oldTargetY = targetY;
-  
-            for(var i = 0; i < circles.length; i++)
-            {
-                var circle = circles[i];
-    
-                var box = circle.box;
-    
-                // Work out the transforms
-                var x2 = targetX - box.width * (circle.scaleLevel) / 2;
-                var y2 = targetY - box.height * (circle.scaleLevel) / 2;
-
-                // Smoothe it out a little
-                var speed = (i + 1) * DELAY;
-                x2 = circle.x + (x2 - circle.x) / speed;
-                y2 = circle.y + (y2 - circle.y) / speed;
- 
-                circle.translate(x2, y2);
- 
-                //circle.setHue((circle.hue - 5) % 360);
-                window.requestAnimationFrame(warp);
-            }
-        }
-
- 
-        buildTunnel(NUMBER_OF_CIRCLES);
-
-        window.requestAnimationFrame(warp);
-
- 
-    }
     this.blackHole = function(args)
     {
         
@@ -683,8 +521,7 @@ var page = function () {
         //var translate = 0 + "," + 0;
         items.each(function(d, i){   
             var item =  d3.select(this)
-                .transition()
-                
+                .transition()              
             .duration(500)
             .ease("exp")
             .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
@@ -699,8 +536,7 @@ var page = function () {
             var translate = 0 + "," + 0;
             //var translate = -this.vector.x + "," + -this.vector.x;
             el 
-                .transition()
-                
+            .transition()                
             .duration(250)
             .ease("exp")
             .attr({"transform" : "translate(" + translate + ")", r: rad})
@@ -734,8 +570,7 @@ var page = function () {
             .attr({
                 fill: "white",
                 r: thisPage.canvasWidth
-            })
-            
+            })           
             .transition()
             .duration(300)
             .ease("exp")
@@ -743,7 +578,17 @@ var page = function () {
                 fill: "black",
                 r: r
             })
-            .each("end", function(){thisPage.blackHole.call(this, args);});	
+            .each("end", function(){
+        //        var foreign = d3.select("#Simulations").append("foreignObject")
+        //    .attr("id", "foreignobject")
+        //.attr("width", thisPage.canvasWidth)
+        //.attr("height", thisPage.canvasHeight);
+        //        var div = foreign.append("div").attr("id", "starfield")
+        //        .attr("width", thisPage.canvasWidth)
+        //        .attr("height", thisPage.canvasHeight);
+        //        $("#foreignobject").starfield({ starDensity: 1.0, mouseScale: 1.0 });
+                thisPage.blackHole.call(this, args);
+            });	
             
     }
     this.isWithinBox= function(el, p)
@@ -987,6 +832,7 @@ var page = function () {
         time = Date.now(),
         svg = thisPage.canvas;
         self = this;
+
         this.velocity = [vx, vy, vz];
         this.scale = scale;
         this.projection = d3.geo.orthographic()
@@ -1019,31 +865,39 @@ var page = function () {
         g.append("path")
             .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
             .attr("class", "equator")
-            .attr("stroke-width", 22)
+            .attr("stroke-width", 20)
             .attr("d", path);
 
         var sphere = svg.selectAll("#sphere-rotating-" + id +" path");
-
-        var timer = d3.timer(function() {
+        this.tick = function(){
             var velocity = self.velocity;
             var dt = Date.now() - time;
             projection.rotate([rotate[0] + velocity[0] * dt , rotate[1] + velocity[1] * dt  , rotate[2] + velocity[2] * dt ]);
             sphere.attr("d", path);
-        });
+        }
+       
         return this;
     }  
-    this.createSphere.prototype.velocity =[];
-    this.createSphere.prototype.strokeWidth = 22;
+    
     this.createRings = function(c, fill){
         var s = [];
 
-        var sphere1 = new thisPage.createSphere(1, c.x, c.y, 1100,  0, .06 ,0,
+        var sphere1 = new thisPage.createSphere(1, c.x, c.y, 850,  0, .1 ,0,
         0, 0 , 90, false);
-        var sphere2 = new thisPage.createSphere(2, c.x, c.y, 1150, 0, .05, 0,
-        0, 90,0, false);
-        var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1150, 0, .08, 0,
-            0 ,0, 0, true);
+        //var sphere2 = new thisPage.createSphere(2, c.x, c.y, 950, 0, 0 , .05,
+        //0, 0,0, false);
+        var sphere2 = new thisPage.createSphere(2, c.x, c.y, 950, 0, .05, 0,
+        0, 0 ,135, true);
+        var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1050, 0, .075, 0,
+            0 ,0, 0, false);
 
+
+        //var sphere1 = new thisPage.createSphere(1, c.x, c.y, 120,  0, .06 ,0,
+        //0, 0 , 90, false);
+        //var sphere2 = new thisPage.createSphere(2, c.x, c.y, 140, 0, .05, 0,
+        //0, 90,0, false);
+        //var sphere3 = new thisPage.createSphere(3, c.x, c.y, 200, 0, .08, 0,
+        //    0 ,0, 0, true);
 
        // var sphere1 = new thisPage.createSphere(1, c.x, c.y, 1100,  0, .08 ,0,
        //  0, 0 , 90, false);
@@ -1065,13 +919,15 @@ var page = function () {
             var ring = d3.select(this);
             var scale = d.scale;
             var speed = Math.max.apply(null, d.velocity);
+            var startingVelocity = d.velocity.slice(0);
             ring
             .transition()
             .duration(1000)
-            .ease(d3.easeExpIn)
+            .ease(d3.easeLinear)
             .tween("scaleChange", function() {
                 var i = d3.interpolate(scale, scale/5);
                 return function(t) {
+                    
                     d.projection.scale(i(t));
                 };
                                          
@@ -1079,13 +935,17 @@ var page = function () {
            
             //.transition()
             //.delay(200)
-            //.duration(5000)
-            //.ease(d3.easeLinear)
+            //.duration(1000)
+            //.ease(d3.easeExpIn)
             //.tween("rotationSpeed", function() {
-            //    var i = d3.interpolate(speed, speed * 5);
+                
+            //    var i = d3.interpolateNumber(speed, speed * 5);
                 
             //    return function(t) {
-            //        var newV = d.velocity.map(function(x) { return x * i(t); });
+            //        console.log(t);
+            //        console.log("---"+i(t))
+            //        var res = i(t);
+            //        var newV = startingVelocity.map(function(x) { if(x) {return res;}else {return 0}; });
             //        d.velocity = newV;
             //    };
                                              
@@ -1094,7 +954,11 @@ var page = function () {
                                
         });
 
-
+        var timer = d3.timer(function() {
+            spheres.forEach(function(s, i){
+                s.tick();
+            });
+        });
 
         d3.selectAll(".gear").attr("visibility", "hidden");
     }
@@ -1109,7 +973,13 @@ var page = function () {
         var defs = thisPage.mainSvg.append("defs");
         thisPage.canvas = thisPage.mainSvg.append("g").attr({id: "mainGroup"});
 
-        
+        //var foreign = thisPage.canvas.append("foreignObject")
+        //    .attr("id", "foreignobject")
+        //.attr("width", thisPage.canvasWidth)
+        //.attr("height", thisPage.canvasHeight);
+        //var div = foreign.append("div").attr("id", "starfield")
+        //.attr("width", thisPage.canvasWidth)
+        //.attr("height", thisPage.canvasHeight);
         
         var bigRadius = Math.round(Math.max(thisPage.canvasWidth, thisPage.canvasHeight) / 8); 
         var topicRadius = Math.round(bigRadius/4);
@@ -1139,11 +1009,8 @@ var page = function () {
         //var sphere3 = thisPage.createSphere(3, c.x, c.y, 180, 0, .1, 0,
         //    0 ,0, 45);
     }
-    
-    
-   
+          
 }
-
 var utilities = new utilities();
 var windowPage = new page();
 //windowPage.initialize();

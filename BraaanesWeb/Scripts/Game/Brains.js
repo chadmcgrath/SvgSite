@@ -271,7 +271,9 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
         
         //if (recoiled === false) {
             this.homeIn(angle, goVector);
-        //}              
+        //}  
+        // reset engine in case they were slowed down by a shot.
+            this.engine = $("#engine").val();
         return true;
 
     }
@@ -596,13 +598,17 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
             return;
         enemy = this.target;
         var reward = damage;// * (enemy.shieldMax - enemy.shield + 1);
-
-        enemy.takeHit(damage, gun.color);
+        
+        enemy.takeHit(damage, gun.color, damage);
         if (damage <= 0)
             return;
         if (enemy.dead == true) {
             that.kills = that.kills + 1;
-            reward += 5000;
+            //reward += 5000;
+        }
+        if(this.target.team === this.team)
+        {
+            reward = -2 * reward;
         }
         this.deliverySignal += reward;
         this.pointTotal += reward;
@@ -621,7 +627,13 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
         that.engine = that.engine + factor;
     }
 
-    this.takeHit = function takeHit(damage, color) {
+    this.takeHit = function takeHit(damage, color, blast) {
+        // hack todo hacky hack hack let's give the quick a chance 
+        
+        if (blast && that.team === 2) {           
+            that.engine = this.engine - blast;
+        }
+
         var circleColor = "red";
         if (color)
             circleColor = "white";
@@ -723,6 +735,13 @@ Raphael.fn.triangle = function (x, y, height, width) {
     path = path.concat(["L", (x), (y + width)]);
     return this.path(path.concat(["z"]).join(" "));
 };
+$.urlParam = function (name) {
+    var results = new RegExp('[\?&]' + name + '=([^&#]*)').exec(window.location.href);
+    if (!results) {
+        return 0;
+    }
+    return results[1] || 0;
+}
 var isViewing = true;
 $(document).ready(function () {
     document.onkeypress = function (event) {
@@ -731,34 +750,16 @@ $(document).ready(function () {
             isViewing = !isViewing;
         }
     }
-    function decimalAdjust(type, value, exp) {
-        // If the exp is undefined or zero...
-        if (typeof exp === 'undefined' || +exp === 0) {
-            return Math[type](value);
-        }
-        value = +value;
-        exp = +exp;
-        // If the value is not a number or the exp is not an integer...
-        if (isNaN(value) || !(typeof exp === 'number' && exp % 1 === 0)) {
-            return NaN;
-        }
-        // Shift
-        value = value.toString().split('e');
-        value = Math[type](+(value[0] + 'e' + (value[1] ? (+value[1] - exp) : -exp)));
-        // Shift back
-        value = value.toString().split('e');
-        return +(value[0] + 'e' + (value[1] ? (+value[1] + exp) : exp));
-    }
-
-    // Decimal round
-    if (!Math.round10) {
-        Math.round10 = function (value, exp) {
-            return decimalAdjust('round', value, exp);
-        };
+    var rep = $.urlParam('rep');
+    if (rep) {
+        rep = parseInt(rep);
+        ++rep;
+        fetchInputAndOpenCanvas(rep);
+        $("#dialog").hide();
+        return;
     }
     begin();
 });
-
 
 var whiteCountText;
 var greenCountText;
@@ -768,7 +769,6 @@ var originalAgentList = [];
 var inputArray = [];
 var humanList = [];
 var zombieList = [];
-
 
 function begin() {
 
@@ -783,11 +783,11 @@ function begin() {
             }
         },
         close: function () {
-            fetchInputAndOpenCanvas();
+            fetchInputAndOpenCanvas(0);
         }
     });
 }
-function fetchInputAndOpenCanvas() {
+function fetchInputAndOpenCanvas(reps) {
 
     console.info("Creating canvas at " + new Date().toLocaleTimeString().toString());
     var width = 22;
@@ -824,7 +824,7 @@ function fetchInputAndOpenCanvas() {
     agentList = null;
     agentList = [];
 
-    openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, agents, teamCount, isImportedBrain);
+    openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, agents, teamCount, isImportedBrain, reps);
 
 }
 function addBuildings(canvas1) {
@@ -847,7 +847,7 @@ function addBuildings(canvas1) {
     var diff = maxSize - minSize;
     for (var i = 10; i < canvasHeight - 10;) {
         for (var j = 10; j < canvasWidth - 10;) {
-            var isBuilding = (.55 >= Math.random());
+            var isBuilding = (.30 >= Math.random());
             var w = minSize + Math.random() * diff;
             if (isBuilding === true) {
                 var l = minSize + Math.random() * diff;
@@ -882,7 +882,7 @@ function addBuildings(canvas1) {
     canvas1.buildings = buildings;
     canvas1.walls = walls;
 }
-function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, agentCount, teamCount, isImportedBrain) {
+function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, agentCount, teamCount, isImportedBrain, reps) {
 
     whiteCount = 0;
     greenCount = 0;
@@ -908,7 +908,7 @@ function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, 
     agentList = null;
     agentList = [];
     inputArray = [];
-    var numNeuro = 5;
+    var numNeuro = 10;
     for (var i = 0; i < agentCount; ++i) {
         //for (var i = 0; i < agentCount; ++i) {
         var kills = 0;
@@ -977,7 +977,7 @@ function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, 
         addAgent(newagent);
         iterateCountText(team, 1);
     }
-    originalAgentList = null;
+    originalAgentList = null
     originalAgentList = agentList;
     humanList = [];
     zombieList = [];
@@ -987,15 +987,15 @@ function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, 
     zombieList = agentList.filter(function (elem) {
         return elem.team === 2;
     });
-    executeTurn(teamCount);
+    
+    executeTurn(teamCount, reps);
 }
-
-
 var turnCounter = 0;
-function executeTurn(teamCount) {
+
+function executeTurn(teamCount, reps) {
     if (!isFinite(teamCount)) {
         teamCount = 2;
-    }
+    }    
     var keepGoing = false;
     var teamvictory = true;
     var team = null;
@@ -1029,8 +1029,7 @@ function executeTurn(teamCount) {
             s.fight();
         });
         ++turnCounter;
-        if (isViewing || turnCounter > 100) {
-            turnCounter = 0;
+        if (isViewing || turnCounter % 100 === 0) {
             requestAnimationFrame(executeTurn);
         }
         else {
@@ -1046,7 +1045,15 @@ function executeTurn(teamCount) {
             $("#netStateNew").val(t);
         }
         canvas = null;
-        fetchInputAndOpenCanvas();
+        var url = window.location.href;
+        if (url.indexOf('?') > -1) {
+            document.location.reload(false);
+        } else {
+            url += '?rep=1'
+        }
+        window.location.href = url;
+
+        //fetchInputAndOpenCanvas();
         return;
     }
 }
@@ -1072,10 +1079,13 @@ function buildagent(width, height, gunPower, canvas, i, team, engine, turnRate, 
     var color = "black";
     do {
         if (1 === 1) {
-            pos = new vector(10 + Math.random() * (canvasWidth), 10 + Math.random() * (canvasHeight - 10));
-            var el = canvas.getElementByPoint(pos.x, pos.y);
+            pos = new vector(10 + Math.random() * (canvasWidth - 20), 10 + Math.random() * (canvasHeight - 20));
+            var centerx = pos.x + height / 2;
+            var centery = pos.y + width / 2;
+            var el = canvas.getElementByPoint(centerx, centery);
             if (el) {
                 color = el.attrs.fill;
+            } else {
             }
         }
         //else if (team === 2) {
@@ -1108,11 +1118,11 @@ function createBrain(numagents, newagent, epsilon) {
 
     var spec = {}
     spec.update = 'qlearn'; // qlearn | sarsa
-    spec.gamma = 0.9; // discount factor, [0, 1)
+    spec.gamma = 0.7; // discount factor, [0, 1)
     spec.epsilon = epsilon;//0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
-    spec.alpha = 0.003; // value function learning rate
-    spec.experience_add_every = 5; // number of time steps before we add another experience to replay memory
-    spec.experience_size = 50000; // size of experience
+    spec.alpha = 0.005; // value function learning rate
+    spec.experience_add_every = 1; // number of time steps before we add another experience to replay memory
+    spec.experience_size = 20000; // size of experience
     spec.learning_steps_per_iteration = 50;
     spec.tderror_clamp = 1.0; // for robustness
     spec.num_hidden_units = arrayLength * 2; // number of neurons in hidden layer
@@ -1141,7 +1151,10 @@ function overrideNeuro(agent, isLearning) {
     agent.type = .2;
     agent.eyes = [];
     agent.beam = null;
-    var hypotenuse = Math.hypot(canvasWidth, canvasHeight);
+    var maxX = Math.min(canvasWidth, 1920);
+    var maxY = Math.min(canvasWidth, 1080);
+    var maxVactor = new vector(maxX, maxY);
+    var hypotenuse = maxVactor.magnitude();
     for (var i = 0; i < numEyes; ++i) {
         var e = {
             originalRads: i * Math.PI * 2 / numEyes,
@@ -1305,8 +1318,10 @@ function overrideNeuro(agent, isLearning) {
         var y = agent.center.y;
         this.recoil = false;
         var recoiled = CheckRecoil(agent.front.x, agent.front.y);
-        if (recoiled)
+        if (recoiled) {
             Recoil(agent);
+            agent.painSignal += -.5;
+        }
         this.recoil = recoiled;
         
         var a = agent;
@@ -1345,7 +1360,7 @@ function overrideNeuro(agent, isLearning) {
             return;
         }
         var deliveryReward = this.deliverySignal * 1;
-        var painReward = this.painSignal;
+        var painReward = this.painSignal * 2;
         //var tailedReward
 
         this.painSignal = 0.0;
