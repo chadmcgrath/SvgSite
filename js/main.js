@@ -310,23 +310,23 @@ var page = function () {
     }
     this.populateTopics = function (bigRadius, radius) {
 
-        var work = new thisPage.topic("Work", "People I've worked with.","blue", radius);
+        var work = new thisPage.topic("Work", "People I've worked with.","navy", radius);
         work.callback = this.dropToPage;
         this.topics.push(work);
 
-        var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "orange", radius);
+        var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "darkorange", radius);
         ai.callback = thisPage.superNova;
         this.topics.push(ai);
         
-        var likes = new thisPage.topic("Likes", "Some sites I like.", "yellow", radius);
+        var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBB00", radius);
         likes.callback = thisPage.throwItems;
         this.topics.push(likes);
 
-        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "green", radius);
+        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
         qualifications.callback = thisPage.throwItems;
         this.topics.push(qualifications);
 
-        var about = new thisPage.topic("About", "About this website.", "red", radius);
+        var about = new thisPage.topic("About", "About this website.", "maroon", radius);
         about.callback = thisPage.throwItems;
         this.topics.push(about);
 
@@ -506,7 +506,7 @@ var page = function () {
 
     this.blackHole = function(args)
     {
-        
+        var expandDuration = 1500;
         thisPage.gearTimer.stop();
         var t = args[0];
         var c = thisPage.center;
@@ -528,26 +528,271 @@ var page = function () {
             //.each("end", function(){thisPage.wormHole.call(this, args);});	
         });  
         var topics = d3.selectAll(".topicCircle")
-        topics.each(function(d, i){  
+        var thisTopic = null;
+        topics.each(function(d, i){ 
+            
             if(t.id === d.id)
+            {
+                thisTopic =  d3.select(this);
                 return;
+            }
             var rad = d.radius * scale;
             var el =  d3.select(this);
             var translate = 0 + "," + 0;
             //var translate = -this.vector.x + "," + -this.vector.x;
             el 
-            .transition()                
-            .duration(250)
+            .transition() 
+            .delay(550)
+            .duration(350)
             .ease("exp")
             .attr({"transform" : "translate(" + translate + ")", r: rad})
+            .each("end", function(){
+                var expandRad = Math.min(thisPage.canvasWidth/2, thisPage.canvasHeight/2);
+                thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
+                thisTopic
+                .transition()
+                .duration(expandDuration)
+                .ease("exp")
+                .attr({"transform" : "translate(" + translate + ")", r: expandRad})
+            });
             //"transform" : "translate(" + c.x + "," + c.y + ")"});
             
         });
-
-        // thisPage.wormHole();
+        
+        
         ////Gear.updateGears(thisPage.gears);
 
        
+    }
+    this.warpField= function(el, duration){
+        http://www.kevs3d.co.uk/dev/warpfield/     
+// requestAnimFrame shim
+window.requestAnimFrame = (function()
+{
+    return  window.requestAnimationFrame       || 
+            window.webkitRequestAnimationFrame || 
+            window.mozRequestAnimationFrame    || 
+            window.oRequestAnimationFrame      || 
+            window.msRequestAnimationFrame     || 
+            function(callback)
+            {
+                window.setTimeout(callback);
+            };
+})();
+
+    
+var G = thisPage.canvas;
+var canvas = thisPage.canvas;
+var width = thisPage.canvasWidth;
+var height = thisPage.canvasHeight;
+var c = thisPage.center;
+var mousex = c.x, mousey = c.y;
+        // setup aliases
+        var Rnd = Math.random,
+            Sin = Math.sin,
+            Floor = Math.floor;
+
+        // constants and storage for objects that represent star positions
+        var warpZ = 12,
+            units = 500,
+            stars = [],
+            cycle = 0,
+            Z = 0.025 + (1/25 * 2);
+       
+        
+        // function to reset a star object
+        function resetstar(a)
+        {
+            a.x = (Rnd() * width - (width * 0.5)) * warpZ;
+            a.y = (Rnd() * height - (height * 0.5)) * warpZ;
+            a.z = warpZ;
+            a.px = 0;
+            a.py = 0;
+        }
+
+        // initial star setup
+        for (var i=0, n; i<units; i++)
+        {
+            n = {};
+            resetstar(n);
+            stars.push(n);
+        }
+
+        // star rendering anim function
+        var rf = function(items)
+        {
+            // clear background
+           
+   
+             //mouse position to head towards
+            var cx = (mousex - width / 2) + (width / 2),
+                cy = (mousey - height / 2) + (height / 2);
+   
+            // update all stars
+            var sat = Floor(Z * 500);       // Z range 0.01 -> 0.5
+            if (sat > 100) sat = 100;
+            for (var i=0; i<units; i++)
+            {
+                var n = stars[i],            // the star
+                    xx = n.x / n.z,          // star position
+                    yy = n.y / n.z,
+                    e = (1.0 / n.z + 1) * 2;   // size i.e. z
+      
+                if (n.px !== 0)
+                {
+                    if(!n.line){
+                        n.line = canvas.append("line");
+                    }
+                            n.line
+                                            .attr("x1", xx + cx)
+                                            .attr("y1", yy + cy)
+                                             .attr("x2", n.px + cx)
+                                             .attr("y2", n.py + cy)
+                        .attr('stroke-width', function(d) { return e })
+                    .attr("stroke", "hsl(" + ((cycle * i) % 360) + "," + sat + "%,80%)")
+                    .attr('opacity', function(d) { return .5 });
+
+                    // hsl colour from a sine wave
+                }
+                Z += 1/100000;
+                // update star position values with new settings
+                n.px = xx;
+                n.py = yy;
+                n.z -= Z;
+      
+                // reset when star is out of the view field
+                if (n.z < Z || n.px > width || n.py > height)
+                {
+                    resetstar(n);
+                }
+            }   
+            // colour cycle sinewave rotation
+            cycle += 0.01;
+           
+    };    
+        var matts = {
+            images : ["sadMatthew.jpg", "spaceMatthew.jpg", "sexyMatthew.jpg"],
+            sent: false          
+        };
+        var socks = {
+            images : ["sock3.png","sock2.png","sock.png"],
+            sent : false
+        };
+        var misc = {
+            images : ["illuminati.png","cthulu.png","tardis.jpg"],
+            sent : false
+        };
+        var imageSet = [misc, socks, matts];
+        launchImages(imageSet, 0, 200);
+        function launchImages(itemSet, iterator,  delay)
+        {
+            var items = itemSet[iterator];
+           
+            var scale = 400;
+            items.sent = true;
+            var images = items.images;
+            var count = images.length;
+            var folder ="img\\blackhole\\";
+            var imgs = thisPage.canvas.selectAll("image")
+                .data(images, function(d){ return d;});
+                                  
+            imgs.enter()               
+                .append("svg:image")
+            .attr("xlink:href", function(d){ return  folder + d})
+                .transition()
+        .delay(delay)
+                .attr("x", c.x)
+                .attr("y", c.y)
+            .attr("width", "10")
+            .attr("height", "10")                               
+            .transition()
+             .duration(duration/4)
+             .ease(d3.easeExpOut) 
+                //.attr("transform", function(d) {
+                //    var angle = i * Math.PI * 2 / count;
+                //    var mag1 = thisPage.canvasWidth / 2.5;
+                //    var mag2 = thisPage.canvasHeight / 2.5;
+                //    var v = c.add(new utilities.vector(mag1 * Math.sin(angle) - scale/2, mag2 * Math.cos(angle)- scale/2));
+                //    //return "rotate(180,"+c.x+","+c.y+") translate(" + v.x + ", " + v.y+ ")"
+                //    return "translate(" + v.x + ", " + v.y+ ")"
+                //})      
+                .attr("x", function(d, i){
+                    var angle = i * Math.PI * 2 / count;
+                    var mag = thisPage.canvasWidth / 2.5;
+                    var v = c.add(new utilities.vector(mag * Math.sin(angle) - scale/2, mag * Math.cos(angle)- scale/2));
+                    return v.x
+                })
+                .attr("y", function(d, i){
+                    var angle = i * Math.PI * 2 / count;
+                    var mag = thisPage.canvasHeight / 2.5;
+                    var v = c.add(new utilities.vector(mag * Math.sin(angle)- scale/2, -1 * mag * Math.cos(angle) - scale/4));
+                    return v.y})
+            .attr("width", "400")
+            .attr("height", "400")
+            .call(endall, function() {
+                ++ iterator;
+                    if(itemSet[iterator]){
+                        launchImages(itemSet, iterator, 0);
+                    }
+                    imgs.transition()
+                    .duration(200)                
+                    .attr("opacity", 0)
+                    .remove();
+                
+            });                                
+        }
+        function endall(transition, callback) { 
+            var n = 0; 
+            transition 
+                .each(function() { ++n; }) 
+                .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
+        } 
+
+        var timer = d3.timer(function(elapsed){
+            
+            
+            rf();
+            if(elapsed > duration){
+                timer.stop();
+            }
+        });
+
+    }
+    this.tunnel = function(thisTopic){
+        var c = thisPage.center;
+        var numLines = 5;
+        for(var i = 0; i<numLines; ++i){ 
+            var bezierLine = d3.svg.line()
+        .x(function(d) { return d[0]; })
+        .y(function(d) { return d[1]; })
+        .interpolate("basis");
+
+        
+   
+            thisTopic.append('path')
+                .attr("d", bezierLine([[0, 40], [25, 70], [50, 100], [100, 50], [150, 20], [200, 130], [300, 120]]))
+                .attr("stroke", "red")
+                .attr("stroke-width", 1)
+                .attr("fill", "none")
+            .transition()
+                .duration(1000)
+                .attrTween("stroke-dasharray", function() {
+                    var len = this.getTotalLength();
+                    return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
+                });
+        }
+        function createCircle()
+        {
+            var r = 150;
+            var circles = svgContainer.selectAll("circle")
+                                      .data(jsonCircles)
+                                      .enter()
+                                      .append("circle")
+                                  .attr("cx", function (d) { thisPage.center.x })
+                                  .attr("cy", function (d) { thisPage.center.y ; })
+                                  .attr("r", function (d) { return r; })
+                                  .style("fill", function(d) { return "black"; });
+        }
     }
     this.superNova = function(args)
     {
@@ -621,6 +866,7 @@ var page = function () {
             fill: function(d) { return "url(#gradient-" + d.id + ")"; },
             transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
         })
+        
         .on("click", function(d){  
             var c = d3.select(this);
             
@@ -628,7 +874,7 @@ var page = function () {
             if(c.attr("data-selected") == 1)
             {
                 c.attr("data-selected", 0);
-                thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .40, .04);
+                thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .60, .04);
                 return;
             }
             d3.selectAll(".topicCircle").each(function(d2, i){  
@@ -653,6 +899,18 @@ var page = function () {
                 .attr("data-selected", 1)
 				.each("end", d.topicClick);	
         }) 
+        .append("text")
+            .attr({
+                x: "50%",
+                y: "50%",
+                stroke :"black",
+                dy :".3em",
+                text : (function(d) { return d.name; })
+                //r: radius,
+                //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
+                //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
+            })
+
         //brittle
         var circles = thisPage.canvas.selectAll(".topicCircle")[0];
         var count = thisPage.topics.length;
@@ -752,7 +1010,7 @@ var page = function () {
             profileSlope: 0.5
         };
         
-        var gearFactors = [64, 64, 96, 48, 48, 96, 112, 256];
+        var gearFactors = [64, 64, 96, 96, 48, 96, 112, 256];
         var holeRadius,
             teeth,
             radius,
@@ -826,7 +1084,7 @@ var page = function () {
         Gear.updateGears(gears);
     }
     
-    this.createSphere = function(id, x, y, scale, vx, vy, vz, rx, ry, rz, hasGrat)
+    this.createSphere = function(id, x, y, scale, vx, vy, vz, rx, ry, rz, hasGrat, fill)
     {
         var rotate = [rx, ry, rz],         
         time = Date.now(),
@@ -838,7 +1096,7 @@ var page = function () {
         this.projection = d3.geo.orthographic()
             .scale(scale)
             .translate([x, y])
-            //.clipAngle(90 + 1e-6)
+            .clipAngle(162.66)
             .precision(.3);
 
         var projection = this.projection;
@@ -853,7 +1111,8 @@ var page = function () {
         g.append("path")
             .datum({type: "Sphere"})
             .attr("class", "sphere" )
-            .attr("d", path);
+            .attr("d", path)
+        .attr("fill", fill);;
         if(hasGrat)
         {
             g.append("path")
@@ -861,11 +1120,11 @@ var page = function () {
                 .attr("class", "graticule")
                 .attr("d", path);
         }
-        this.strokeWdith = 22;
+        this.strokeWdith = 20;
         g.append("path")
             .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
             .attr("class", "equator")
-            .attr("stroke-width", 20)
+            .attr("stroke-width", 15)
             .attr("d", path);
 
         var sphere = svg.selectAll("#sphere-rotating-" + id +" path");
@@ -877,19 +1136,18 @@ var page = function () {
         }
        
         return this;
-    }  
-    
+    }     
     this.createRings = function(c, fill){
         var s = [];
 
-        var sphere1 = new thisPage.createSphere(1, c.x, c.y, 850,  0, .1 ,0,
-        0, 0 , 90, false);
+        var sphere1 = new thisPage.createSphere(1, c.x, c.y, 1000,  0, .15 ,0,
+        0, 0 , 90, false, fill);
         //var sphere2 = new thisPage.createSphere(2, c.x, c.y, 950, 0, 0 , .05,
         //0, 0,0, false);
-        var sphere2 = new thisPage.createSphere(2, c.x, c.y, 950, 0, .05, 0,
-        0, 0 ,135, true);
-        var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1050, 0, .075, 0,
-            0 ,0, 0, false);
+        var sphere2 = new thisPage.createSphere(2, c.x, c.y, 1000, 0,  .15, 0,
+        0, 0 ,135, false, fill);
+        var sphere3 = new thisPage.createSphere(3, c.x, c.y, 1000, 0,  .15, 0,
+            0 ,0, 0, false, fill);
 
 
         //var sphere1 = new thisPage.createSphere(1, c.x, c.y, 120,  0, .06 ,0,
@@ -910,9 +1168,9 @@ var page = function () {
         s.push(sphere3);
         return s;
     }
-    this.ringPort = function(c){
+    this.rings = function(c, fill){
 
-        var spheres = thisPage.createRings(c);
+        var spheres = thisPage.createRings(c, fill);
         d3.selectAll(".sphere-rotating").data(spheres)
             .each(function(d, i){  
                     
@@ -931,8 +1189,7 @@ var page = function () {
                     d.projection.scale(i(t));
                 };
                                          
-            })
-           
+            })          
             //.transition()
             //.delay(200)
             //.duration(1000)
@@ -985,15 +1242,17 @@ var page = function () {
         var topicRadius = Math.round(bigRadius/4);
 
         var gears = thisPage.createGears(bigRadius, topicRadius);
-
+        thisPage.setGears(gears, true, 800);
+        thisPage.startGears(gears);
         thisPage.populateTopics(bigRadius, topicRadius);
         thisPage.populateGradients(defs, thisPage.topics);
         thisPage.createTopicShapes(bigRadius, topicRadius);
-        thisPage.setGears(gears, true, 800);
-        thisPage.startGears(gears);
+        
         thisPage.gears = gears;
         
-        thisPage.ringPort(c);
+        
+        thisPage.rings(c,topicRadius,"blue");
+        
         
        // thisPage.sphere = sphere;
 

@@ -111,20 +111,7 @@ function Recoil(agent) {
     agent.painSignal += -.5;
 
 }
-function RecoilFromWall(agent, distance) {
-    var recoil = -1 * (agent.shieldRadius - distance);
 
-    var movement = "t" + recoil + "," + 0;
-
-    var currentState = agent.shape.matrix.toTransformString();
-
-    agent.shape.transform(currentState + movement);
-
-    agent.setPoints(agent.angle());
-
-    agent.handleRelationships(movement);
-
-}
 function isOnCanvas(x, y) {
     if (x < 0 || x > canvasWidth || y < 0 || y > canvasHeight)
         return false;
@@ -742,7 +729,7 @@ $.urlParam = function (name) {
     }
     return results[1] || 0;
 }
-var isViewing = true;
+var isViewing = false;
 $(document).ready(function () {
     document.onkeypress = function (event) {
         if (event.which == 118) {

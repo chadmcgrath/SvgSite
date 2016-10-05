@@ -128,7 +128,7 @@ img {
 	background-position: top center, 1px 1px, 0px 0px, top center;
 }
 .sphere-rotating  path {
-  fill: none;
+ fill: none;
   stroke-linejoin: round;
 }
 
@@ -138,7 +138,7 @@ img {
 }
 
 .equator {
-  stroke: black;
+  stroke: #0E0B16;
  
 }
 tml, body {
