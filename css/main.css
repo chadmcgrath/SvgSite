@@ -146,7 +146,9 @@ tml, body {
   background-repeat: no-repeat;
   background-attachment: fixed;
   background: hsla(240, 10%, 75%, 1);
-  background-image: radial-gradient(top, circle cover, hsla(221, 95%, 75%, 1) 5%, hsla(251, 20%, 17%,1) 90%);
+  background-image: radial-gradient(ellipse farthest-corner at 22px 22px , #00EFFF 0%, navy 95%);
+   /*background-image: radial-gradient(ellipse farthest-corner at 45px 45px , #00FFFF 0%, #0000FF 95%);
+  /*background-image: radial-gradient(top, circle cover, hsla(221, 95%, 75%, 1) 5%, hsla(251, 20%, 17%,1) 90%);*/
   width:100%; 
 }
 .work
