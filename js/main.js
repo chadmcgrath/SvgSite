@@ -506,7 +506,7 @@ var page = function () {
 
     this.blackHole = function(args)
     {
-        var expandDuration = 1500;
+        var expandDuration = 800;
         thisPage.gearTimer.stop();
         var t = args[0];
         var c = thisPage.center;
@@ -522,38 +522,41 @@ var page = function () {
         items.each(function(d, i){   
             var item =  d3.select(this)
                 .transition()              
-            .duration(500)
-            .ease("exp")
+            .duration(700)
+            .ease("linear")
             .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
             //.each("end", function(){thisPage.wormHole.call(this, args);});	
         });  
         var topics = d3.selectAll(".topicCircle")
         var thisTopic = null;
         topics.each(function(d, i){ 
-            
+            var expandRad = Math.min(thisPage.canvasWidth/2, thisPage.canvasHeight/2);
+            var translate = 0 + "," + 0;
             if(t.id === d.id)
             {
+                
                 thisTopic =  d3.select(this);
-                return;
-            }
-            var rad = d.radius * scale;
-            var el =  d3.select(this);
-            var translate = 0 + "," + 0;
-            //var translate = -this.vector.x + "," + -this.vector.x;
-            el 
-            .transition() 
-            .delay(550)
-            .duration(350)
-            .ease("exp")
-            .attr({"transform" : "translate(" + translate + ")", r: rad})
-            .each("end", function(){
-                var expandRad = Math.min(thisPage.canvasWidth/2, thisPage.canvasHeight/2);
-                thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
                 thisTopic
                 .transition()
                 .duration(expandDuration)
                 .ease("exp")
                 .attr({"transform" : "translate(" + translate + ")", r: expandRad})
+                return;
+            }
+            var rad = d.radius * scale;
+            var el =  d3.select(this);
+            
+            //var translate = -this.vector.x + "," + -this.vector.x;
+            el 
+            .transition() 
+            .delay(300)
+            .duration(650)
+            .ease("exp")
+            .attr({"transform" : "translate(" + translate + ")", r: rad})
+            .each("end", function(){
+                
+                thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
+                
             });
             //"transform" : "translate(" + c.x + "," + c.y + ")"});
             
@@ -566,27 +569,27 @@ var page = function () {
     }
     this.warpField= function(el, duration){
         http://www.kevs3d.co.uk/dev/warpfield/     
-// requestAnimFrame shim
-window.requestAnimFrame = (function()
-{
-    return  window.requestAnimationFrame       || 
-            window.webkitRequestAnimationFrame || 
-            window.mozRequestAnimationFrame    || 
-            window.oRequestAnimationFrame      || 
-            window.msRequestAnimationFrame     || 
-            function(callback)
+        // requestAnimFrame shim
+            window.requestAnimFrame = (function()
             {
-                window.setTimeout(callback);
-            };
-})();
+                return  window.requestAnimationFrame       || 
+                        window.webkitRequestAnimationFrame || 
+                        window.mozRequestAnimationFrame    || 
+                        window.oRequestAnimationFrame      || 
+                        window.msRequestAnimationFrame     || 
+                        function(callback)
+                        {
+                            window.setTimeout(callback);
+                        };
+            })();
 
     
-var G = thisPage.canvas;
-var canvas = thisPage.canvas;
-var width = thisPage.canvasWidth;
-var height = thisPage.canvasHeight;
-var c = thisPage.center;
-var mousex = c.x, mousey = c.y;
+        var G = thisPage.mainSvg;
+        var canvas = thisPage.mainSvg;
+        var width = thisPage.canvasWidth;
+        var height = thisPage.canvasHeight;
+        var c = thisPage.center;
+        var mousex = c.x, mousey = c.y;
         // setup aliases
         var Rnd = Math.random,
             Sin = Math.sin,
@@ -624,7 +627,7 @@ var mousex = c.x, mousey = c.y;
             // clear background
            
    
-             //mouse position to head towards
+            //mouse position to head towards
             var cx = (mousex - width / 2) + (width / 2),
                 cy = (mousey - height / 2) + (height / 2);
    
@@ -643,14 +646,14 @@ var mousex = c.x, mousey = c.y;
                     if(!n.line){
                         n.line = canvas.append("line");
                     }
-                            n.line
-                                            .attr("x1", xx + cx)
-                                            .attr("y1", yy + cy)
-                                             .attr("x2", n.px + cx)
-                                             .attr("y2", n.py + cy)
-                        .attr('stroke-width', function(d) { return e })
-                    .attr("stroke", "hsl(" + ((cycle * i) % 360) + "," + sat + "%,80%)")
-                    .attr('opacity', function(d) { return .5 });
+                    n.line
+                                    .attr("x1", xx + cx)
+                                    .attr("y1", yy + cy)
+                                     .attr("x2", n.px + cx)
+                                     .attr("y2", n.py + cy)
+                .attr('stroke-width', function(d) { return e })
+            .attr("stroke", "hsl(" + ((cycle * i) % 360) + "," + sat + "%,80%)")
+            .attr('opacity', function(d) { return .5 });
 
                     // hsl colour from a sine wave
                 }
@@ -669,33 +672,47 @@ var mousex = c.x, mousey = c.y;
             // colour cycle sinewave rotation
             cycle += 0.01;
            
-    };    
+        };    
         var matts = {
-            images : ["sadMatthew.jpg", "spaceMatthew.jpg", "sexyMatthew.jpg"],
-            sent: false          
+            images : ["sadMatthew.jpg"],// "spaceMatthew.jpg", "sexyMatthew.jpg"],
+            sent: false,
+            delay : 0,
+            scale: 800,
+            vector : new utilities.vector(c.x - 800/2, c.y)
+
+                        
         };
         var socks = {
             images : ["sock3.png","sock2.png","sock.png"],
-            sent : false
+            sent : false,
+            delay : 0,
+            vector : null,
+            scale: 500
         };
         var misc = {
             images : ["illuminati.png","cthulu.png","tardis.jpg"],
-            sent : false
+            sent : false,
+            delay : 0,
+            vector : null,
+            scale: 500
         };
         var imageSet = [misc, socks, matts];
-        launchImages(imageSet, 0, 200);
-        function launchImages(itemSet, iterator,  delay)
+        //var imageSet = matts.images.concat(socks.images.concat(misc.images));
+        launchImages(imageSet, 0, 300);
+        
+        function launchImages(itemSet, iterator, delay, total)
         {
             var items = itemSet[iterator];
            
-            var scale = 400;
-            items.sent = true;
+            var scale = items.scale;
+            
+            //items.sent = true;
             var images = items.images;
+            //var images = itemSet;
             var count = images.length;
             var folder ="img\\blackhole\\";
-            var imgs = thisPage.canvas.selectAll("image")
-                .data(images, function(d){ return d;});
-                                  
+            var imgs = thisPage.mainSvg.selectAll("image")
+                .data(images, function(d){ return d;});                                 
             imgs.enter()               
                 .append("svg:image")
             .attr("xlink:href", function(d){ return  folder + d})
@@ -707,7 +724,7 @@ var mousex = c.x, mousey = c.y;
             .attr("height", "10")                               
             .transition()
              .duration(duration/4)
-             .ease(d3.easeExpOut) 
+             .ease(d3.easeLinear) 
                 //.attr("transform", function(d) {
                 //    var angle = i * Math.PI * 2 / count;
                 //    var mag1 = thisPage.canvasWidth / 2.5;
@@ -720,6 +737,8 @@ var mousex = c.x, mousey = c.y;
                     var angle = i * Math.PI * 2 / count;
                     var mag = thisPage.canvasWidth / 2.5;
                     var v = c.add(new utilities.vector(mag * Math.sin(angle) - scale/2, mag * Math.cos(angle)- scale/2));
+                    if(items.vector)
+                        v = items.vector;
                     return v.x
                 })
                 .attr("y", function(d, i){
@@ -727,18 +746,20 @@ var mousex = c.x, mousey = c.y;
                     var mag = thisPage.canvasHeight / 2.5;
                     var v = c.add(new utilities.vector(mag * Math.sin(angle)- scale/2, -1 * mag * Math.cos(angle) - scale/4));
                     return v.y})
-            .attr("width", "400")
-            .attr("height", "400")
+            .attr("width", scale)
+            .attr("height", scale)
             .call(endall, function() {
                 ++ iterator;
-                    if(itemSet[iterator]){
-                        launchImages(itemSet, iterator, 0);
-                    }
-                    imgs.transition()
-                    .duration(200)                
-                    .attr("opacity", 0)
-                    .remove();
-                
+                if(itemSet[iterator]){
+                    launchImages(itemSet, iterator, 0);
+                }
+                else{
+                    //open likes
+                }
+                imgs.transition()
+                .duration(400)                
+                .attr("opacity", 0)
+                .remove();               
             });                                
         }
         function endall(transition, callback) { 
@@ -850,7 +871,7 @@ var mousex = c.x, mousey = c.y;
         var xPadding = 300;
         var yPadding = 30;    
         var translate = x + "," + y;
-        thisPage.canvas.append("g")
+        thisPage.mainSvg.append("g")
             .attr("id", "topicCircles")
             .selectAll("circle")
         .data(thisPage.topics)
@@ -899,7 +920,7 @@ var mousex = c.x, mousey = c.y;
                 .attr("data-selected", 1)
 				.each("end", d.topicClick);	
         }) 
-        .append("text")
+        .append("svg:text")
             .attr({
                 x: "50%",
                 y: "50%",
@@ -912,7 +933,7 @@ var mousex = c.x, mousey = c.y;
             })
 
         //brittle
-        var circles = thisPage.canvas.selectAll(".topicCircle")[0];
+        var circles = thisPage.mainSvg.selectAll(".topicCircle")[0];
         var count = thisPage.topics.length;
        
         for(var i = 0; i < count; ++i)
@@ -1010,7 +1031,7 @@ var mousex = c.x, mousey = c.y;
             profileSlope: 0.5
         };
         
-        var gearFactors = [64, 64, 96, 96, 48, 96, 112, 256];
+        var gearFactors = [64, 64, 96, 96, 96, 96, 112, 256];
         var holeRadius,
             teeth,
             radius,
@@ -1229,7 +1250,8 @@ var mousex = c.x, mousey = c.y;
             .attr("height", thisPage.canvasHeight);
         var defs = thisPage.mainSvg.append("defs");
         thisPage.canvas = thisPage.mainSvg.append("g").attr({id: "mainGroup"});
-
+        thisPage.likes = thisPage.mainSvg.append("g").attr({id: "likesGroup"});
+       
         //var foreign = thisPage.canvas.append("foreignObject")
         //    .attr("id", "foreignobject")
         //.attr("width", thisPage.canvasWidth)
