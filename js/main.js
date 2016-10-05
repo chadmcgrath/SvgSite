@@ -677,8 +677,9 @@ var page = function () {
             images : ["sadMatthew.jpg"],// "spaceMatthew.jpg", "sexyMatthew.jpg"],
             sent: false,
             delay : 0,
-            scale: 800,
-            vector : new utilities.vector(c.x - 800/2, c.y)
+            scale: 1000,
+            vector : new utilities.vector(c.x - 1000/2, c.y-1000/2),
+            duration : 1000
 
                         
         };
@@ -687,14 +688,16 @@ var page = function () {
             sent : false,
             delay : 0,
             vector : null,
-            scale: 500
+            scale: 500,
+            duration : 500
         };
         var misc = {
             images : ["illuminati.png","cthulu.png","tardis.jpg"],
             sent : false,
             delay : 0,
             vector : null,
-            scale: 500
+            scale: 500,
+            duration : 500
         };
         var imageSet = [misc, socks, matts];
         //var imageSet = matts.images.concat(socks.images.concat(misc.images));
@@ -723,7 +726,12 @@ var page = function () {
             .attr("width", "10")
             .attr("height", "10")                               
             .transition()
-             .duration(duration/4)
+             .duration(function(d){
+                 if(items.duration){
+                    return items.duration;
+                }
+                return duration/5;
+             })
              .ease(d3.easeLinear) 
                 //.attr("transform", function(d) {
                 //    var angle = i * Math.PI * 2 / count;
@@ -744,7 +752,9 @@ var page = function () {
                 .attr("y", function(d, i){
                     var angle = i * Math.PI * 2 / count;
                     var mag = thisPage.canvasHeight / 2.5;
-                    var v = c.add(new utilities.vector(mag * Math.sin(angle)- scale/2, -1 * mag * Math.cos(angle) - scale/4));
+                    var v = c.add(new utilities.vector(mag * Math.sin(angle)- scale/2, -1.2 * mag * Math.cos(angle) - scale/2))
+                    if(items.vector)
+                        v = items.vector;
                     return v.y})
             .attr("width", scale)
             .attr("height", scale)
@@ -757,7 +767,7 @@ var page = function () {
                     //open likes
                 }
                 imgs.transition()
-                .duration(400)                
+                           
                 .attr("opacity", 0)
                 .remove();               
             });                                
