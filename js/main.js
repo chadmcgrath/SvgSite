@@ -560,7 +560,7 @@ var page = function () {
             .attr({"transform" : "translate(" + translate + ")", r: rad})
             .each("end", function(){
                 
-                thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
+                //thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
                 thisPage.launchImages(thisTopic, expandDuration * 3, expandRad);
                 
             });
