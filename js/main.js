@@ -1125,7 +1125,7 @@ var page = function () {
         time = Date.now(),
         svg = thisPage.mainSvg;
         self = this;
-
+        
         this.velocity = [vx, vy, vz];
         this.scale = scale;
         this.projection = d3.geo.orthographic()
@@ -1203,14 +1203,14 @@ var page = function () {
         s.push(sphere3);
         return s;
     }
-    this.rings = function(c, fill){
+    this.rings = function(c, topicRad, bigRad, fill){
 
         var spheres = thisPage.createRings(c, fill);
         d3.selectAll(".sphere-rotating").data(spheres)
             .each(function(d, i){  
                     
             var ring = d3.select(this);
-            var scale = d.scale;
+            var scale = (bigRad -topicRad/2) * 4;
             var speed = Math.max.apply(null, d.velocity);
             var startingVelocity = d.velocity.slice(0);
             ring
@@ -1274,7 +1274,7 @@ var page = function () {
         //.attr("width", thisPage.canvasWidth)
         //.attr("height", thisPage.canvasHeight);
         
-        var bigRadius = Math.round(Math.max(thisPage.canvasWidth, thisPage.canvasHeight) / 8); 
+        var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3); 
         var topicRadius = Math.round(bigRadius/4);
 
         var gears = thisPage.createGears(bigRadius, topicRadius);
@@ -1287,7 +1287,7 @@ var page = function () {
         thisPage.gears = gears;
         
         
-        thisPage.rings(c,topicRadius,"blue");
+        thisPage.rings(c,topicRadius, bigRadius,"blue");
         
         
        // thisPage.sphere = sphere;
