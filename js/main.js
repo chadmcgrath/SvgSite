@@ -510,6 +510,7 @@ var page = function () {
 
     this.blackHole = function(args)
     {
+        $(".sphere-rotating").hide();
         var expandDuration = 800;
         thisPage.gearTimer.stop();
         var t = args[0];
@@ -560,6 +561,7 @@ var page = function () {
             .each("end", function(){
                 
                 thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
+                thisPage.launchImages(thisTopic, expandDuration * 3, expandRad);
                 
             });
             //"transform" : "translate(" + c.x + "," + c.y + ")"});
@@ -676,7 +678,20 @@ var page = function () {
             // colour cycle sinewave rotation
             cycle += 0.01;
            
-        };    
+        }; 
+        var timer = d3.timer(function(elapsed){
+            
+            
+            rf();
+            if(elapsed > duration){
+                timer.stop();
+            }
+        });
+
+    }
+    this.launchImages = function(el, duration){
+
+        var c = thisPage.center;
         var matts = {
             images : ["sadMatthew.jpg"],// "spaceMatthew.jpg", "sexyMatthew.jpg"],
             sent: false,
@@ -783,15 +798,7 @@ var page = function () {
                 .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
         } 
 
-        var timer = d3.timer(function(elapsed){
-            
-            
-            rf();
-            if(elapsed > duration){
-                timer.stop();
-            }
-        });
-
+        
     }
     this.tunnel = function(thisTopic){
         var c = thisPage.center;
@@ -1131,7 +1138,7 @@ var page = function () {
         this.projection = d3.geo.orthographic()
             .scale(scale)
             .translate([x, y])
-            .clipAngle(162.66)
+            .clipAngle(160)
             .precision(.3);
 
         var projection = this.projection;
@@ -1155,11 +1162,11 @@ var page = function () {
                 .attr("class", "graticule")
                 .attr("d", path);
         }
-        this.strokeWdith = 20;
+        this.strokeWdith = 8;
         g.append("path")
             .datum({type: "LineString", coordinates: [[-180, 0], [-90, 0], [0, 0], [90, 0], [180, 0]]})
             .attr("class", "equator")
-            .attr("stroke-width", 15)
+            .attr("stroke-width", this.strokeWdith)
             .attr("d", path);
 
         var sphere = svg.selectAll("#sphere-rotating-" + id +" path");
@@ -1210,7 +1217,7 @@ var page = function () {
             .each(function(d, i){  
                     
             var ring = d3.select(this);
-            var scale = (bigRad -topicRad/2) * 4;
+            var scale = (bigRad -topicRad) * 5 - 6;
             var speed = Math.max.apply(null, d.velocity);
             var startingVelocity = d.velocity.slice(0);
             ring
@@ -1265,15 +1272,7 @@ var page = function () {
         var defs = thisPage.mainSvg.append("defs");
         thisPage.canvas = thisPage.mainSvg.append("g").attr({id: "mainGroup"});
         thisPage.likes = thisPage.mainSvg.append("g").attr({id: "likesGroup"});
-       
-        //var foreign = thisPage.canvas.append("foreignObject")
-        //    .attr("id", "foreignobject")
-        //.attr("width", thisPage.canvasWidth)
-        //.attr("height", thisPage.canvasHeight);
-        //var div = foreign.append("div").attr("id", "starfield")
-        //.attr("width", thisPage.canvasWidth)
-        //.attr("height", thisPage.canvasHeight);
-        
+               
         var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3); 
         var topicRadius = Math.round(bigRadius/4);
 
