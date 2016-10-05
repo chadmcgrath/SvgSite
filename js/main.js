@@ -314,11 +314,15 @@ var page = function () {
         work.callback = this.dropToPage;
         this.topics.push(work);
 
-        var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "darkorange", radius);
+        var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "#FF5000", radius);
         ai.callback = thisPage.superNova;
         this.topics.push(ai);
         
-        var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBB00", radius);
+        //var likes = new thisPage.topic("Likes", "Some sites I like.", "#2170589", radius);
+        //likes.callback = thisPage.throwItems;
+        //this.topics.push(likes);
+
+        var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBF00", radius);
         likes.callback = thisPage.throwItems;
         this.topics.push(likes);
 
@@ -371,7 +375,7 @@ var page = function () {
             .attr("offset", "50%")
             .attr("stop-color", "#FFF845");
         sunGradient.append("stop")
-            .attr("offset", "90%")
+            .attr("offset", "75%")
             .attr("stop-color", "#FFDA4E");
         sunGradient.append("stop")
             .attr("offset", "100%")
@@ -1119,7 +1123,7 @@ var page = function () {
     {
         var rotate = [rx, ry, rz],         
         time = Date.now(),
-        svg = thisPage.canvas;
+        svg = thisPage.mainSvg;
         self = this;
 
         this.velocity = [vx, vy, vz];
