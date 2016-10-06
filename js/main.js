@@ -79,8 +79,8 @@ var page = function () {
     this.canvasWidth = window.innerWidth;
     this.canvasHeight = window.innerHeight;
     this.changeHeight = function(h){
-        thisPage.mainSvg.attr({height : h});
-        thisPage.canvas.attr({height : h});
+        thisPage.mainSvg.attrs({height : h});
+        thisPage.canvas.attrs({height : h});
         thisPage.canvasHeight = h;
     }
     this.center = new utilities.vector(parseInt(window.innerWidth/2), parseInt(window.innerHeight/2));
@@ -93,7 +93,7 @@ var page = function () {
         this.color = color,
         this.subTopics =[],
         this.callback = null,
-        this.ease = "elastic",
+        this.ease = d3.easeElastic,
         this.vector = null,
         this.radius = radius,
         this.topicClick = function (event) {
@@ -118,19 +118,19 @@ var page = function () {
         var v = topic.vector;
         
         topic.shape
-            .transition()
-            .duration(duration)
-            .ease("exp")
-            .each("end", function(){
-                thisPage.popCircle(topic.shape, topic.radius);
-        })
        .attr("data-selected", 0)           
-       .attr({
+       .attrs({
            cx: c.x,
            cy: c.y,                    
            r:  topic.radius,//function(d) { return r; },
            transform : function() {return "translate(" + v.x + ", " + v.y+ ")";}    
-       });
+       })
+            .transition()
+            .duration(duration)
+            .ease(d3.easeExp)
+            .on("end", function(){
+                thisPage.popCircle(topic.shape, topic.radius);
+            });
         if(setGears){
             thisPage.setGears(thisPage.gears, setGears, 0);
         }
@@ -151,26 +151,70 @@ var page = function () {
             return;
         }
         var pos = path.getPointAtLength(counter);   //get the position (see Raphael docs)
-        e.attr({cx: pos.x, cy: pos.y});  //set the circle position
+        e.attrs({cx: pos.x, cy: pos.y});  //set the circle position
     
         counter++; // count the step counter one up
     };
-    this.spiralNEW = function(group){
-        var c = thisPage.center ;                 
+    this.spiral = function(center, group, rotations, duration){
+        var c = thisPage.center;
+        var rotations = 3;
         //var p = d.vector.unit(); 
-        var rotate = 360 + "," +c.x+ "," + c.y;
+        var rotations = 360 * rotations;
+        var smallRad = 5;
+        group.data(thisPage.topics)   
+             //.attr("cx", c.x)
+            //.attr("cy", c.y)
+            //.attr("transform" , function() {return "translate(0, 0)"})
+            .attr("r", smallRad)
+            //.each(cycle)
+            .transition()
+            .duration(duration)
+            .each(cycle);
 
-        group.data(thisPage.topics).attr(
-            "transform" , function(d) {return "translate(" + d.vector.unit().x + ", " + d.vector.unit().y+ ")";}),
-            group.attr("r", 10)
-        .transition()
-                .duration(1000)
-                .ease("exp")
-                //.attr({r : d.radius})
-                .attr("transform" , function(d) {return "rotate("+rotate+") translate(" + d.vector.x + ", " +d.vector.y+ ")"});
-     
+        function cycle() {
+            d3.select(this)
+                .transition()
+                .duration(duration)
+                .attr("r", function(d){ return d.radius })
+                .attrTween("transform", function(d) { 
+                    var s1 = "rotate(0, "+c.x+", "+c.y+") translate(0, 0)";
+                    var s2 = "rotate(" + rotations +", "+c.x +", "+c.y+") translate(" + d.vector.x + ", " +d.vector.y+ ")";
+                    return d3.interpolateString(s1, s2); 
+                })
+                //.each("end", cycle);
+        }
+
+
+
+            //.attrTween("transform", (function(d){
+            //    function tween(d, i, a) {
+            //        //var str = "rotate(0, "+c.x+","+c.y+"), rotate(60, "+c.x +", "+c.y+")";
+            //        var str = "rotate(0, "+c.x+","+c.y+") translate(0, 0) , rotate(60, "+c.x +", "+c.y+") translate(" + d.vector.x + ", " +d.vector.y+ ")";
+            //        var res = d3.interpolateString(str);
+            //        return res;
+            //    }()
+            //})
+            //);
+                //transform : function(d){ return "translate(" + d.vector.x + ", " +d.vector.y+ ")"},
+            
+        
+            
+       
+        //function cycle() {
+        //    var topic = d3.select(this)
+        //        .transition()
+        //        .duration(duration)
+        //        .attrTween("transform", tween);
+        //    function tween(d, i, a) {
+        //        var str = "rotate(0, "+c.x+","+c.y+"), rotate(60, "+c.x +", "+c.y+")";
+        //        //var str = "rotate(0, "+c.x+","+c.y+")translate(0, 0) , rotate(60, "+c.x +", "+c.y+")translate(" + d.vector.x + ", " +d.vector.y+ ")";
+        //        var res = d3.interpolateString(str);
+        //        return res;
+        //    }
+            
+        //}
     }
-    this.spiral = function(begin, topic, r, dr, rotations , v, rMax, delay, isExponential, i)
+    this.spiralOld = function(begin, topic, r, dr, rotations , v, rMax, delay, isExponential, i)
     {
         var el = topic.shape;
         //isExponential = false;
@@ -243,7 +287,7 @@ var page = function () {
 					.transition()
 					.duration(50)
 					.attr("r", r)
-					.ease('sine')
+					//.ease(d3.easeBounce)
     }
     this.orbit = function(bigRadius, count, rotations, time, scaleBig, scaleSmall)
     { 
@@ -272,7 +316,7 @@ var page = function () {
                 c
                 .transition()
                 .duration(0)
-                .attr({"transform" : "translate(0, 0)"})
+                .attrs({"transform" : "translate(0, 0)"})
                 .each(function(){                              
                     repeat(pathData, rotations, 0);
                 });
@@ -294,14 +338,14 @@ var page = function () {
                     c.transition()
                     .delay(delay)
                     .duration(p.d)
-                    .ease("linear")
-                        //.attr({"transform" : "translate(" + p.p.x + "," + p.p.y + ")"})
-                        .attr({
+                    .ease(d3.easeLinear)
+                        //.attrs({"transform" : "translate(" + p.p.x + "," + p.p.y + ")"})
+                        .attrs({
                             'r': p.s,
                             'cx': p.p.x,
                             'cy': p.p.y,                    
                         })
-                    .each("end", function(){
+                    .on("end", function(){
                         repeat( pathData, rotations, i);
                     
                     });                               
@@ -424,13 +468,13 @@ var page = function () {
                 .delay(delay) 
                 .duration(duration)
                 .ease(ease)
-                .attr({"transform" : "translate(" + translate + ")"})
+                .attrs({"transform" : "translate(" + translate + ")"})
                 .attr("data-selected", 0)
                 .transition()
                 .delay(1000) 
-            .each("end", function(){
+            .on("end", function(){
                 var resetSpeed = 250;
-                scroll(document.body.getBoundingClientRect().height - window.innerHeight, "exp");
+                scroll(document.body.getBoundingClientRect().height - window.innerHeight, d3.ease.easeExp);
                 thisPage.resetAll(d, duration, true);
                 d3.selectAll(".gear").attr("visibility", "hidden");
             });
@@ -528,8 +572,8 @@ var page = function () {
             var item =  d3.select(this)
                 .transition()              
             .duration(700)
-            .ease("linear")
-            .attr({"transform" : "translate(" + translate + ") scale("+scale+") "})
+            .ease(d3.easeLinear)
+            .attrs({"transform" : "translate(" + translate + ") scale("+scale+") "})
             //.each("end", function(){thisPage.wormHole.call(this, args);});	
         });  
         var topics = d3.selectAll(".topicCircle")
@@ -544,8 +588,8 @@ var page = function () {
                 thisTopic
                 .transition()
                 .duration(expandDuration)
-                .ease("exp")
-                .attr({"transform" : "translate(" + translate + ")", r: expandRad})
+                .ease(d3.easeExp)
+                .attrs({"transform" : "translate(" + translate + ")", r: expandRad})
                 return;
             }
             var rad = d.radius * scale;
@@ -556,9 +600,9 @@ var page = function () {
             .transition() 
             .delay(300)
             .duration(650)
-            .ease("exp")
-            .attr({"transform" : "translate(" + translate + ")", r: rad})
-            .each("end", function(){
+            .ease(d3.easeExp)
+            .attrs({"transform" : "translate(" + translate + ")", r: rad})
+            .on("end", function(){
                 
                 //thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
                 thisPage.launchImages(thisTopic, expandDuration * 3, expandRad);
@@ -698,9 +742,7 @@ var page = function () {
             delay : 0,
             scale: 1000,
             vector : new utilities.vector(c.x - 1000/2, c.y-1000/2),
-            duration : 1000
-
-                        
+            duration : 1000                       
         };
         var socks = {
             images : ["sock3.png","sock2.png","sock.png"],
@@ -715,7 +757,7 @@ var page = function () {
             sent : false,
             delay : 0,
             vector : null,
-            scale: 500,
+            scale: thisPage.canvasWidth/5,
             duration : 500
         };
         var imageSet = [misc, socks, matts];
@@ -747,9 +789,9 @@ var page = function () {
             .transition()
              .duration(function(d){
                  if(items.duration){
-                    return items.duration;
-                }
-                return duration/5;
+                     return items.duration;
+                 }
+                 return duration/5;
              })
              .ease(d3.easeLinear) 
                 //.attr("transform", function(d) {
@@ -777,7 +819,7 @@ var page = function () {
                     return v.y})
             .attr("width", scale)
             .attr("height", scale)
-            .call(endall, function() {
+            .on("end",function() {
                 ++ iterator;
                 if(itemSet[iterator]){
                     launchImages(itemSet, iterator, 0);
@@ -788,54 +830,18 @@ var page = function () {
                 imgs.transition()
                            
                 .attr("opacity", 0)
-                .remove();               
-            });                                
+                .remove();  
+            });                                  
         }
-        function endall(transition, callback) { 
-            var n = 0; 
-            transition 
-                .each(function() { ++n; }) 
-                .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
-        } 
+        //function endall(transition, callback) { 
+        //    var n = 0; 
+        //    transition 
+        //        .each(function() { ++n; }) 
+        //        .each("end", function() { if (!--n) callback.apply(this, arguments); }); 
+        //} 
 
         
-    }
-    this.tunnel = function(thisTopic){
-        var c = thisPage.center;
-        var numLines = 5;
-        for(var i = 0; i<numLines; ++i){ 
-            var bezierLine = d3.svg.line()
-        .x(function(d) { return d[0]; })
-        .y(function(d) { return d[1]; })
-        .interpolate("basis");
-
-        
-   
-            thisTopic.append('path')
-                .attr("d", bezierLine([[0, 40], [25, 70], [50, 100], [100, 50], [150, 20], [200, 130], [300, 120]]))
-                .attr("stroke", "red")
-                .attr("stroke-width", 1)
-                .attr("fill", "none")
-            .transition()
-                .duration(1000)
-                .attrTween("stroke-dasharray", function() {
-                    var len = this.getTotalLength();
-                    return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
-                });
-        }
-        function createCircle()
-        {
-            var r = 150;
-            var circles = svgContainer.selectAll("circle")
-                                      .data(jsonCircles)
-                                      .enter()
-                                      .append("circle")
-                                  .attr("cx", function (d) { thisPage.center.x })
-                                  .attr("cy", function (d) { thisPage.center.y ; })
-                                  .attr("r", function (d) { return r; })
-                                  .style("fill", function(d) { return "black"; });
-        }
-    }
+    }   
     this.superNova = function(args)
     {
         //thisPage.loadDistortion();
@@ -845,27 +851,27 @@ var page = function () {
         c
             .transition()
             .duration(500)
-            .ease("exp")
+            .ease(d3.easeExp)
            
-            .attr({
+            .attrs({
                 fill: "url(#sun-gradient)",
                 r: (t.radius * 10)
             })
             .transition()
             .duration(100)
-            .ease("exp")
-            .attr({
+            .ease(d3.easeExp)
+            .attrs({
                 fill: "white",
                 r: thisPage.canvasWidth
             })           
             .transition()
             .duration(300)
-            .ease("exp")
-            .attr({
+            .ease(d3.easeExp)
+            .attrs({
                 fill: "black",
                 r: r
             })
-            .each("end", function(){
+            .on("end", function(){
         //        var foreign = d3.select("#Simulations").append("foreignObject")
         //    .attr("id", "foreignobject")
         //.attr("width", thisPage.canvasWidth)
@@ -901,7 +907,7 @@ var page = function () {
         .attr("class", function(d){ return "topicCircle"; })
         .attr("id", function(d){ return d.id; })
         .attr("data-selected", 0)
-        .attr({
+        .attrs({
             cx: x,
             cy: y,
             r: radius,
@@ -927,7 +933,7 @@ var page = function () {
                     .transition()
                     .duration(1500)
                     .ease(d2.ease)
-                    .attr({"transform" : "translate(" + translate + ")"})
+                    .attrs({"transform" : "translate(" + translate + ")"})
                     .attr("data-selected", 0)
                     
                 }                    
@@ -937,12 +943,12 @@ var page = function () {
                 .transition()
                 .duration(250)
                 .ease(d.ease)
-                .attr({"transform" : "translate(" + translate + ")"})
+                .attrs({"transform" : "translate(" + translate + ")"})
                 .attr("data-selected", 1)
-				.each("end", d.topicClick);	
+				.on("end", d.topicClick);	
         }) 
         .append("svg:text")
-            .attr({
+            .attrs({
                 x: "50%",
                 y: "50%",
                 stroke :"black",
@@ -954,18 +960,19 @@ var page = function () {
             })
 
         //brittle
-        var circles = thisPage.mainSvg.selectAll(".topicCircle")[0];
+        var circles = thisPage.mainSvg.selectAll(".topicCircle");
+        var nodes = circles.nodes();
         var count = thisPage.topics.length;
        
         for(var i = 0; i < count; ++i)
         {
             const topic = thisPage.topics[i];
-            topic.shape = d3.select(circles[i]);
+            topic.shape = d3.select(nodes[i]);
                 
-            thisPage.spiral(thisPage.center, topic, bigRadius, bigRadius/32, 
-                1.20, topic.vector.unit(), bigRadius, 0, true);
+            //thisPage.spiral(thisPage.center, topic, bigRadius, bigRadius/32, 
+            //    1.20, topic.vector.unit(), bigRadius, 0, true);
         }       
-        //thisPage.spiral(d3.selectAll(".topicCircle"));
+        thisPage.spiral(thisPage.center, circles,3, 800);
         
         function subTopic(name, width, height){
             this.name = name,
@@ -975,7 +982,7 @@ var page = function () {
                                         .attr("y", 0)
                                         .attr("width", width)
                                         .attr("heigth", height)
-            shape.attr({
+            shape.attrs({
                 stroke: 'darkblue',
                 'stroke-width': 3,
                 fill: 'silver'
@@ -1024,7 +1031,7 @@ var page = function () {
     this.createGears = function(bigRadius, topicRadius)   
     {
         var radius =  bigRadius + topicRadius/2;
-        var gear1 = Gear.create(thisPage.canvas, { 
+        var gear1 = Gear.create(thisPage.gearGroup, { 
             radius: radius, 
             teeth: radius/4, 
             x: thisPage.center.x, 
@@ -1045,7 +1052,7 @@ var page = function () {
             transition: true,
             speed: 0.01,
             autoShuffle: false,
-            number: 30,
+            number: thisPage.canvasWidth * 3/200,
             addendum: 8,
             dedendum: 3,
             thickness: 0.6,
@@ -1069,7 +1076,7 @@ var page = function () {
             innerRadius = radius - options.addendum - options.dedendum;
             holeRadius = factor > 96 ? innerRadius * 0.5 + innerRadius * 0.5 * options.holeRadius : innerRadius * options.holeRadius;
 
-            gears.push(newGear = Gear.create(thisPage.canvas, { 
+            gears.push(newGear = Gear.create(thisPage.gearGroup, { 
                 radius: radius, 
                 teeth: teeth, 
                 x: 0, 
@@ -1096,12 +1103,12 @@ var page = function () {
         //Gear.updateGears(gears);
         
 
-        thisPage.canvas.selectAll('.gear')
+        thisPage.gearGroup.selectAll('.gear')
             .each(function(d, i) {
                 if (transition) {
                     d3.select(this)
                         .transition()
-                        .ease('elastic')
+                        .ease(d3.easeElastic)
                         .delay(i * 80 + Math.random() * 80)
                         .duration(duration)
                         .attr('transform', function(d) {
@@ -1117,7 +1124,7 @@ var page = function () {
     }
     this.startGears = function(gears){        
         thisPage.gearTimer = d3.timer(function () {
-            thisPage.canvas.selectAll('.gear-path')
+            thisPage.gearGroup.selectAll('.gear-path')
                 .attr('transform', function (d) {
                     d.angle += d.speed;
                     return 'rotate(' + d.angle * (180 / Math.PI) + ')';
@@ -1135,16 +1142,16 @@ var page = function () {
         
         this.velocity = [vx, vy, vz];
         this.scale = scale;
-        this.projection = d3.geo.orthographic()
+        this.projection = d3.geoOrthographic()
             .scale(scale)
             .translate([x, y])
             .clipAngle(160)
             .precision(.3);
 
         var projection = this.projection;
-        var path = d3.geo.path()
+        var path = d3.geoPath()
             .projection(projection);
-        var graticule = d3.geo.graticule();
+        var graticule = d3.geoGraticule();
 
         var g = svg.append("g")
         .attr("class", "sphere-rotating")
@@ -1157,6 +1164,7 @@ var page = function () {
         .attr("fill", fill);;
         if(hasGrat)
         {
+            
             g.append("path")
                 .datum(graticule)
                 .attr("class", "graticule")
@@ -1259,7 +1267,7 @@ var page = function () {
             });
         });
 
-        d3.selectAll(".gear").attr("visibility", "hidden");
+        //d3.selectAll(".gear").attr("visibility", "hidden");
     }
     this.initialize = new function () {
         
@@ -1270,8 +1278,9 @@ var page = function () {
             .attr("width", thisPage.canvasWidth)
             .attr("height", thisPage.canvasHeight);
         var defs = thisPage.mainSvg.append("defs");
-        thisPage.canvas = thisPage.mainSvg.append("g").attr({id: "mainGroup"});
-        thisPage.likes = thisPage.mainSvg.append("g").attr({id: "likesGroup"});
+        thisPage.canvas =  thisPage.mainSvg.append("g").attrs({id: "mainGroup"});
+        thisPage.likes = thisPage.mainSvg.append("g").attrs({id: "likesGroup"});
+        thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({id: "gearGroup"});
                
         var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3); 
         var topicRadius = Math.round(bigRadius/4);
@@ -1281,12 +1290,13 @@ var page = function () {
         thisPage.startGears(gears);
         thisPage.populateTopics(bigRadius, topicRadius);
         thisPage.populateGradients(defs, thisPage.topics);
+        thisPage.rings(c,topicRadius, bigRadius,"blue");
         thisPage.createTopicShapes(bigRadius, topicRadius);
         
         thisPage.gears = gears;
         
         
-        thisPage.rings(c,topicRadius, bigRadius,"blue");
+        
         
         
        // thisPage.sphere = sphere;
