@@ -139,7 +139,7 @@ var page = function () {
             .duration(duration)
             .ease(d3.easeExp)
             .on("end", function () {
-                thisPage.popCircle(topic.shape, topic.radius);
+                thisPage.popCircle(topic.shape.select("circle"), topic.radius);
             });
         if (setGears) {
             thisPage.setGears(thisPage.gears, setGears, 0);
@@ -215,7 +215,7 @@ var page = function () {
         var dr = Math.PI / count;
         var center = thisPage.center;
 
-        d3.selectAll(".topicCircle")
+        d3.selectAll(".circle-container")
             .each(function (d, i) {
 
                 var direction = i % 2;
@@ -226,14 +226,15 @@ var page = function () {
                 var start = center.add(addMe);
                 var end = center.subtract(addMe);
 
-                var c = d3.select(this);
+                var g =  d3.select(this);
+                var c = g.select("circle");
                 var circleRad = parseInt(c.attr("r"));
                 var small = scaleSmall * circleRad;
                 var big = scaleBig * circleRad;
                 var mid = (big + small) / 2;
                 var pathData = [{ p: start, s: mid, d: 250, e: "exp" }, { p: center, s: small, d: 150, e: "linear" }
                    , { p: end, s: mid, d: 250, e: "exp" }, { p: center, s: big, d: 150, e: "linear" }];
-                c
+                g
                 .transition()
                 .duration(0)
                 .attrs({ "transform": "translate(0, 0)" })
@@ -394,7 +395,7 @@ var page = function () {
         thisPage.stretch(originalHeight);
         var ease = d3.easeBounce;
 
-        d3.selectAll(".topicCircle").each(function (d, i) {
+        d3.selectAll(".circle-container").each(function (d, i) {
             var delay = Math.random() * 400;
             if (this.id == topic.Id) {
                 delay = 0;
@@ -797,7 +798,7 @@ var page = function () {
     this.superNova = function (args) {
         //thisPage.loadDistortion();
         var t = args[0];
-        var c = t.shape;
+        var c = t.shape.select("circle");
         var r = t.radius / 2;
         c
             .transition()
@@ -927,7 +928,7 @@ var page = function () {
             })
 
         //brittle
-        var circles = thisPage.mainSvg.selectAll(".topicCircle");
+        var circles = thisPage.mainSvg.selectAll(".circle-container");
         var nodes = circles.nodes();
         var count = thisPage.topics.length;
 
