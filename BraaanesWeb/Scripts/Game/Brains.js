@@ -729,7 +729,7 @@ $.urlParam = function (name) {
     }
     return results[1] || 0;
 }
-var isViewing = false;
+var isViewing = true;
 $(document).ready(function () {
     document.onkeypress = function (event) {
         if (event.which == 118) {
@@ -1064,21 +1064,27 @@ function buildagent(width, height, gunPower, canvas, i, team, engine, turnRate, 
     // start teams on opposing coreners
     var pos;
     var color = "black";
+    var inBuilding = false;
     do {
         if (1 === 1) {
+            console.info("creating " + i);
             pos = new vector(10 + Math.random() * (canvasWidth - 20), 10 + Math.random() * (canvasHeight - 20));
-            var centerx = pos.x + height / 2;
-            var centery = pos.y + width / 2;
-            var el = canvas.getElementByPoint(centerx, centery);
-            if (el) {
-                color = el.attrs.fill;
-            } else {
-            }
+            var centerx = pos.x;// + height / 2;
+            var centery = pos.y;// + width / 2;
+            inBuilding = CheckRecoil(centerx, centery);
+            //var el = canvas.getElementByPoint(centerx, centery);
+            //if (el) {
+            //    color = el.attrs.fill;
+            //    if (color != "black") {
+            //        console.info("in building");
+            //    }
+            //} else {
+            //}
         }
         //else if (team === 2) {
         //    pos = new vector(canvasWidth - 10 - (Math.random() * (canvasWidth / 4)), canvasHeight - 10 - (Math.random() * (canvasHeight)));
         //}
-    } while (color != "black");
+    } while (inBuilding === true);
 
     //var pos = new vector(Math.random() * (canvasWidth/2) + canvasWidth/4, Math.random() * (canvasHeight/2) + canvasHeight/4);
 
