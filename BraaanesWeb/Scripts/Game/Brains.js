@@ -801,6 +801,7 @@ function fetchInputAndOpenCanvas(reps) {
     isUseragent = $("#isUseragent").prop('checked');
     agents = parseInt($("#agents").val());
     isTeams = $("#isTeams").prop('checked');
+    isImportedBrain = $("#import-brain").prop('checked');
 
     var teamCount = 1;
 
@@ -920,8 +921,11 @@ function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, 
                     var buff = null;
                     var json = null;
                     if (isImportedBrain) {
-                        json = JSON.parse(localStorage.getItem('brain'));
-                        //json = JSON.parse($("#netState").val());
+                        if (localStorage) {
+                            json = JSON.parse(localStorage.getItem('brain'));
+                        }
+                        if(!json || json == "")
+                            json = JSON.parse($("#netState").val());
                     } else {
 
                         buf = filesystem.readFileSync("brainState.txt", "utf8");
@@ -1353,7 +1357,7 @@ function overrideNeuro(agent, isLearning) {
             return;
         }
         var deliveryReward = this.deliverySignal * 1;
-        var painReward = this.painSignal * 2;
+        var painReward = this.painSignal * 1;
         //var tailedReward
 
         this.painSignal = 0.0;

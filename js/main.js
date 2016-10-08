@@ -291,8 +291,11 @@ var page = function () {
         likes.callback = thisPage.throwItems;
         this.topics.push(likes);
 
+        //green
         var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
-        qualifications.callback = thisPage.throwItems;
+        qualifications.callback = function(){
+            window.location.href = "BraaanesWeb/Brains.html?rep=1";
+        };
         this.topics.push(qualifications);
 
         var about = new thisPage.topic("About", "About this website.", "maroon", radius);
@@ -541,7 +544,7 @@ var page = function () {
         .on("end", function () {
 
             //thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
-            //thisPage.launchImages(this.blackHole, expandDuration * 3, expandRad);
+            thisPage.launchImages(this.blackHole, expandDuration * 3, expandRad);
 
         });
         //var thisTopic = null;
@@ -869,8 +872,8 @@ var page = function () {
             transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
         });
 
-        g.attr("data-selected", 0)
-        .append("circle")
+        g.attr("data-selected", 0);
+        var topicCircle = g.append("circle")
         .attr("class", function (d) { return "topicCircle"; })
         .attr("id", function (d) { return "topic-" + d.id; })       
         .attrs({
@@ -880,7 +883,11 @@ var page = function () {
             fill: function (d) { return "url(#gradient-" + d.id + ")"; },
            
         })
+        //.on('mouseover', function(d){
+        //    var hover= topicCircle.attrs({ r : function (d) { d.radius * 1.5 } });
+        //})
         ;g
+        
         .on("click", function (d) {
             var c = d3.select(this);
 
@@ -912,20 +919,20 @@ var page = function () {
                 .attr("data-selected", 1)
 				.on("end", d.topicClick);
         })
-        ;g 
-        .append("text")
-            .text(function (d) { return d.name; })
-            .attrs({
-                x: x,
-                y: y,
-                stroke: "white",
-                dy: "6em",
-                "text-anchor" : "middle"
-                //text: (function (d) { return d.name; })
-                //r: radius,
-                //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
-                //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
-            })
+        //;g 
+        //.append("text")
+        //    .text(function (d) { return d.name; })
+        //    .attrs({
+        //        x: x,
+        //        y: y,
+        //        stroke: "white",
+        //        dy: "6em",
+        //        "text-anchor" : "middle"
+        //        //text: (function (d) { return d.name; })
+        //        //r: radius,
+        //        //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
+        //        //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
+        //    })
 
         //brittle
         var circles = thisPage.mainSvg.selectAll(".circle-container");
