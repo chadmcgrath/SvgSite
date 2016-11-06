@@ -84,13 +84,13 @@ var page = function () {
         thisPage.canvasHeight = h;
     }
     this.center = new utilities.vector(parseInt(window.innerWidth / 2), parseInt(window.innerHeight / 2));
-    this.getRectCenter = function(item, point, scale){
-        if(!scale){
+    this.getRectCenter = function (item, point, scale) {
+        if (!scale) {
             scale = 1;
         }
         var box = item.getBBox();
-        var offsetX = parseFloat(box.width)/ 2 * scale;                               
-        var offsetY = parseFloat(box.height)/ 2 * scale;                    
+        var offsetX = parseFloat(box.width) / 2 * scale;
+        var offsetY = parseFloat(box.height) / 2 * scale;
         var translate = (point.x - offsetX) + "," + (point.y - offsetY);
         return translate;
     }
@@ -170,7 +170,7 @@ var page = function () {
         rotations = 360 * rotations;
         var smallRad = 15;
         group.data(thisPage.topics)
-            .attr("r", smallRad)          
+            .attr("r", smallRad)
             .each(cycle);
         var ease = d3.easeExp;
         //var t1 = d3.transition().duration(duration).ease(ease);
@@ -191,31 +191,31 @@ var page = function () {
                 .transition()
                 .duration(duration)
                 .ease(d3.easeExp)
-                .attr("r", function (d) { 
-                    return d.radius ;
+                .attr("r", function (d) {
+                    return d.radius;
                 })
-                .on("end", function(d){
+                .on("end", function (d) {
                     thisPage.popCircle(circle, circle.attr("r"));
                 });
-                
-            }
-       
-    }  
+
+        }
+
+    }
     this.popCircle = function (el, r) {
         var el = el.transition()
 					.duration(100)
-					.attr("r", r * 1.5)
+					.attr("r", r * 1.75)
 					.transition()
-					.duration(50)
+					.duration(75)
 					.attr("r", r)
         //.ease(d3.easeBounce)
     }
-    this.orbit = function (bigRadius, count, rotations, time, scaleBig, scaleSmall) {
+    this.orbit = function (bigRadius, count, rotations, time, scaleBig, scaleSmall, group) {
         var rad = bigRadius * 1;
         var dr = Math.PI / count;
         var center = thisPage.center;
 
-        d3.selectAll(".circle-container")
+        group
             .each(function (d, i) {
 
                 var direction = i % 2;
@@ -226,7 +226,7 @@ var page = function () {
                 var start = center.add(addMe);
                 var end = center.subtract(addMe);
 
-                var g =  d3.select(this);
+                var g = d3.select(this);
                 var c = g.select("circle");
                 var circleRad = parseInt(c.attr("r"));
                 var small = scaleSmall * circleRad;
@@ -268,7 +268,6 @@ var page = function () {
                         })
                     .on("end", function () {
                         repeat(pathData, rotations, i);
-
                     });
                 }
             });
@@ -279,6 +278,13 @@ var page = function () {
         work.callback = this.dropToPage;
         this.topics.push(work);
 
+        //green
+        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
+        qualifications.callback = function () {
+            window.location.href = "BraaanesWeb/Brains.html?rep=1";
+        };
+        this.topics.push(qualifications);
+
         var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "#FF5000", radius);
         ai.callback = thisPage.superNova;
         this.topics.push(ai);
@@ -287,13 +293,10 @@ var page = function () {
         //likes.callback = thisPage.throwItems;
         //this.topics.push(likes);
 
+        //yellow
         var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBF00", radius);
-        likes.callback = thisPage.throwItems;
+        likes.callback = thisPage.openSolarSystem;
         this.topics.push(likes);
-
-        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
-        qualifications.callback = thisPage.throwItems;
-        this.topics.push(qualifications);
 
         var about = new thisPage.topic("About", "About this website.", "maroon", radius);
         about.callback = thisPage.throwItems;
@@ -356,14 +359,14 @@ var page = function () {
         blackHoleGradient.append("stop")
         .attr("offset", "96%")
         .attr("stop-color", "black");
-       
+
         blackHoleGradient.append("stop")
             .attr("offset", "96%")
             .attr("stop-color", "red");
         blackHoleGradient.append("stop")
             .attr("offset", "98%")
             .attr("stop-color", "white");
-       
+
 
         var pageGradient = defs.append("radialGradient")
         .attr("id", "page-gradient")
@@ -383,6 +386,80 @@ var page = function () {
         sunGradient.append("stop")
             .attr("offset", "100%")
             .attr("stop-color", "#FB8933");
+    }
+    this.openSolarSystem = function (args) {
+
+        var t = args[0];
+        var circle = t.shape.select("circle");
+        var r = t.radius / 2;
+        var center = thisPage.center;
+        var globe = thisPage.openEarth(center, thisPage.bigRadius, 30);
+        thisPage.globe = globe;
+        circle
+            .transition()
+            .duration(0)
+            .ease(d3.easeExp)
+            .attrs({
+                fill: "url(#sun-gradient)",
+                r: (t.radius * 9)
+            })
+            .transition()
+            .duration(100)
+            .ease(d3.easeExp)
+            .attrs({
+                r: (t.radius * 5)
+            })
+        var trans =
+         d3.transition()
+        .duration(2000)
+        .ease(d3.easeLinear);
+            
+        circle.transition(trans)
+            .attrs({
+                r: (t.radius * 2),
+                transform: function (d) { return "translate(" + (-1 * center.x) + ", " + (-1 * center.y) + ")"; }
+            });
+        
+       
+        var h = thisPage.canvasHeight / 4;
+        var w = thisPage.canvasWidth / 4;
+        var x = center.x;
+        var y = center.y;
+        var points = [
+            
+            [x+w, x+h],
+            [-x -w, -y - h],
+            [0, 0],
+        ];
+        var path = thisPage.mainSvg.append("path")
+        .data([points])
+        .attr("d", d3.line());
+        //.tension(0) // Catmull–Rom
+        //.interpolate("cardinal-closed"));
+        var world = thisPage.globe;
+        var scale = world.projection.scale();
+        transition();
+
+        function transition() {           
+            world.transition(trans)      
+            .attrTween("transform", translateAlong(path.node()))
+            .tween("globeScaleChange", function () {
+                var i = d3.interpolate(scale, scale * 10);
+                return function (t) {
+                    world.projection.scale(i(t));
+                };
+
+            })
+        }
+        function translateAlong(path) {
+            var l = path.getTotalLength();
+            return function (d, i, a) {
+                return function (t) {
+                    var p = path.getPointAtLength(t * l);
+                    return "translate(" + p.x + "," + p.y + ")";
+                };
+            };
+        }
     }
     this.globeSwallow = function () {
         var sphere = thisPage.sphere;
@@ -498,50 +575,50 @@ var page = function () {
         var t = args[0];
         var c = thisPage.center;
         var scale = .1;
-        var items = d3.selectAll("g").filter(function (d, i)
-        { 
+        var items = d3.selectAll("g").filter(function (d, i) {
             var g = $(this);
-            return g.hasClass("gear") || g.hasClass("sphere-rotating") || g.hasClass("circle-container")});
+            return g.hasClass("gear") || g.hasClass("sphere-rotating") || g.hasClass("circle-container")
+        });
         // && this.id != "topicCircles" });
-        
-        
+
+
         items.each(function (d, i) {
             var x, y;
             var item = d3.select(this);
             var translate = c.x + "," + c.y;
-           
+
             x = item.attr("cx");
             y = item.attr("cy");
-            if(x){
-                var factor  = scale -1;
-                translate = (-1*c.x *factor ) + "," + (-1 *c.y * factor );
+            if (x) {
+                var factor = scale - 1;
+                translate = (-1 * c.x * factor) + "," + (-1 * c.y * factor);
             }
             //var translate = thisPage.getRectCenter(this, c, scale);
             item.transition()
             .duration(expandDuration)
             .ease(d3.easeLinear)
              .attrs({ "transform": "translate(" + translate + ") scale(" + scale + ") " })
-            
+
             //.each("end", function(){thisPage.wormHole.call(this, args);});	
         });
         var expandRad = Math.min(thisPage.canvasWidth / 2, thisPage.canvasHeight / 2);
 
         var blackCircle = thisPage.mainSvg.append("circle")
             .attrs({
-                id : "blackhole",
+                id: "blackhole",
                 cx: c.x,
                 cy: c.y,
-                fill: "url(#blackhole-gradient)" 
+                fill: "url(#blackhole-gradient)"
             })
         .transition()
         .duration(expandDuration)
         .ease(d3.easeExp)
         .attrs({ r: expandRad })
-            
+
         .on("end", function () {
 
             //thisPage.warpField(thisTopic, expandDuration * 3, expandRad);
-            //thisPage.launchImages(this.blackHole, expandDuration * 3, expandRad);
+            thisPage.launchImages(this.blackHole, expandDuration * 3, expandRad);
 
         });
         //var thisTopic = null;
@@ -568,7 +645,7 @@ var page = function () {
         //    .duration(650)
         //    .ease(d3.easeExp)
         //    .attrs({ "transform": "translate(" + translate + ")", r: rad })
-            
+
         //    //"transform" : "translate(" + c.x + "," + c.y + ")"});
 
         //});
@@ -695,7 +772,8 @@ var page = function () {
             delay: 0,
             scale: 1000,
             vector: new utilities.vector(c.x - 1000 / 2, c.y - 1000 / 2),
-            duration: 1000
+            duration: 1000,
+            angle: 0
         };
         var socks = {
             images: ["sock3.png", "sock2.png", "sock.png"],
@@ -703,7 +781,8 @@ var page = function () {
             delay: 0,
             vector: null,
             scale: 500,
-            duration: 500
+            duration: 500,
+            angle: (360 / 6)
         };
         var misc = {
             images: ["illuminati.png", "cthulu.png", "tardis.jpg"],
@@ -711,7 +790,8 @@ var page = function () {
             delay: 0,
             vector: null,
             scale: thisPage.canvasWidth / 5,
-            duration: 500
+            duration: 500,
+            angle: 0
         };
         var imageSet = [misc, socks, matts];
         //var imageSet = matts.images.concat(socks.images.concat(misc.images));
@@ -721,30 +801,27 @@ var page = function () {
             var items = itemSet[iterator];
 
             var scale = items.scale;
-
-            //items.sent = true;
             var images = items.images;
+
             //var images = itemSet;
             var count = images.length;
             var folder = "img\\blackhole\\";
             var imgs = thisPage.mainSvg.selectAll("image")
-                .data(images, function (d) { return d; });
+            .data(images, function (d) { return d; });
+
             imgs.enter()
-                .append("svg:image")
+            .append("svg:image")
             .attr("xlink:href", function (d) { return folder + d })
-                .transition()
-        .delay(delay)
-                .attr("x", c.x)
-                .attr("y", c.y)
-            .attr("width", "10")
-            .attr("height", "10")
             .transition()
-             .duration(function (d) {
-                 if (items.duration) {
-                     return items.duration;
-                 }
-                 return duration / 5;
-             })
+            .delay(delay)
+            .attrs({ "x": c.x, "y": c.y, "width": 10, "height": "10" })
+            .transition()
+            .duration(function (d) {
+                if (items.duration) {
+                    return items.duration;
+                }
+                return duration / 5;
+            })
              .ease(d3.easeLinear)
                 //.attr("transform", function(d) {
                 //    var angle = i * Math.PI * 2 / count;
@@ -849,15 +926,13 @@ var page = function () {
         var xPadding = 300;
         var yPadding = 30;
         var translate = x + "," + y;
-        var container = 
+        var container =
         thisPage.mainSvg.append("g")
-
             .attr("id", "topicCircles")
             .selectAll("circle")
         .data(thisPage.topics)
-        .enter()
-        ;
-       
+        .enter();
+
         var g = container.append("g")
         .attr("id", function (d) { return "container-" + d.id; })
         .attr("class", "circle-container")
@@ -869,25 +944,27 @@ var page = function () {
             transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
         });
 
-        g.attr("data-selected", 0)
-        .append("circle")
+        g.attr("data-selected", 0);
+        var topicCircle = g.append("circle")
         .attr("class", function (d) { return "topicCircle"; })
-        .attr("id", function (d) { return "topic-" + d.id; })       
+        .attr("id", function (d) { return "topic-" + d.id; })
         .attrs({
             cx: x,
             cy: y,
             r: radius,
             fill: function (d) { return "url(#gradient-" + d.id + ")"; },
-           
+
         })
-        ;g
+        //.on('mouseover', function(d){
+        //    var hover= topicCircle.attrs({ r : function (d) { d.radius * 1.5 } });
+        //})
+        ; g
+
         .on("click", function (d) {
             var c = d3.select(this);
-
             var center = thisPage.center;
-            if (c.attr("data-selected") == 1) {
-               
-                thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .60, .04);
+            if (c.attr("data-selected") == 1) {               
+                thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .60, .04, g);
                 return;
             }
             d3.selectAll(".circle-container").each(function (d2, i) {
@@ -900,7 +977,6 @@ var page = function () {
                     .ease(d2.ease)
                     .attrs({ "transform": "translate(" + translate + ")" })
                     .attr("data-selected", 0)
-
                 }
             });
             var translate = 0 + "," + 0;
@@ -912,20 +988,20 @@ var page = function () {
                 .attr("data-selected", 1)
 				.on("end", d.topicClick);
         })
-        ;g 
-        .append("text")
-            .text(function (d) { return d.name; })
-            .attrs({
-                x: x,
-                y: y,
-                stroke: "white",
-                dy: "6em",
-                "text-anchor" : "middle"
-                //text: (function (d) { return d.name; })
-                //r: radius,
-                //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
-                //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
-            })
+        //;g 
+        //.append("text")
+        //    .text(function (d) { return d.name; })
+        //    .attrs({
+        //        x: x,
+        //        y: y,
+        //        stroke: "white",
+        //        dy: "6em",
+        //        "text-anchor" : "middle"
+        //        //text: (function (d) { return d.name; })
+        //        //r: radius,
+        //        //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
+        //        //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
+        //    })
 
         //brittle
         var circles = thisPage.mainSvg.selectAll(".circle-container");
@@ -1121,7 +1197,7 @@ var page = function () {
         .attrs({
             cx: x,
             cy: y
-           
+
         });
 
         g.append("path")
@@ -1186,7 +1262,6 @@ var page = function () {
                 .tween("scaleChange", function () {
                     var i = d3.interpolate(scale, scale / 5);
                     return function (t) {
-
                         d.projection.scale(i(t));
                     };
 
@@ -1212,13 +1287,206 @@ var page = function () {
 
             });
 
-        var timer = d3.timer(function () {
-            spheres.forEach(function (s, i) {
-                s.tick();
-            });
-        });
-
+        //var timer = d3.timer(function () {
+        //    spheres.forEach(function (s, i) {
+        //        s.tick();
+        //    });
+        //});
+        return spheres;
         //d3.selectAll(".gear").attr("visibility", "hidden");
+    }
+    this.openEarth = function (c, radius, scale) {
+       
+        var focused = false,
+        ortho = true,
+        sens = 0.25;
+        
+        var projection = d3.geoOrthographic()
+        .scale(scale)
+        .rotate([0, 0])
+        .translate([c.x, c.y])
+        .clipAngle(90);
+
+        //var projectionMap = d3.geoEquirectangular()
+        //.scale(145)
+        //.translate([c.x, c.y])
+
+        
+
+        var path = d3.geoPath()           
+        .projection(projection);
+
+        //var svgMap = d3.select("div#map").append("svg")
+        //.attr("overflow", "hidden")
+        //.attr("width", mapWidth)
+        //.attr("height", mapHeight);
+
+        //var zoneTooltip = d3.select("div#map").append("div").attr("class", "zoneTooltip"),
+        //infoLabel = d3.select("div#map").append("div").attr("class", "infoLabel");
+
+        var g = thisPage.globeGroup;
+
+       
+        
+        //Rotate to default before animation
+
+        function defaultRotate() {
+            d3.transition()
+            .duration(1500)
+            .tween("rotate", function () {
+                var r = d3.interpolate(projection.rotate(), [0, 0]);
+                return function (t) {
+                    projection.rotate(r(t));
+                    g.selectAll("path").attr("d", path);
+                };
+            })
+        };
+
+        //Loading data
+
+        //queue()
+        //.defer(d3.json, "/d/5685937/world-110m.json")
+        ////.defer(d3.tsv, "/d/5685937/world-110m-country-names.tsv")
+        //.await(ready);
+        var color = d3.scaleOrdinal(d3.schemeCategory10);
+        // ugly
+        var worldData = worldClientJson;
+        // var countries = worldCountriesJson;
+
+        //return
+        var w = ready(null, worldData, null);
+        w.projection = projection;
+        return w;
+        
+        function ready(error, world, countryData) {
+
+            var countryById = {},
+            countries = topojson.feature(world, world.objects.countries).features,
+                neighbors = topojson.neighbors(world.objects.countries.geometries);
+
+            //Adding countries by name
+
+            //countryData.forEach(function (d) {
+            //    countryById[d.id] = d.name;
+            //});
+
+            //Drawing countries on the globe
+            var world = g
+            .selectAll("path").data(countries)
+            .enter()
+            .append("path")
+            .attr("class", "mapData")
+            .attr("d", path)
+                //.on("click", function (d) {
+                //    alert("");
+                //    if (focused === d) return reset();
+                //    g.selectAll(".focused").classed("focused", false);
+                //    d3.select(this).classed("focused", focused = d);
+                //    infoLabel.text(countryById[d.id])
+                //    .style("display", "inline");
+
+                //    //Transforming Globe to Map
+
+                //    if (ortho === true) {
+                //        defaultRotate();
+                //        setTimeout(function () {
+                //            g.selectAll(".ortho").classed("ortho", ortho = false);
+                //            projection = projectionMap;
+                //            path.projection(projection);
+                //            g.selectAll("path").transition().duration(5000).attr("d", path);
+                //        }
+                //        , 1600);
+                //    }
+                //})
+            .attr("fill", function (d, i) {
+                return color(d.color = d3.max(neighbors[i], function (n) {
+                    return countries[n].color;
+                }) + 1 | 0);
+            })
+            .classed("ortho", ortho = true)
+            //Drag event
+            .call(
+                d3.drag()
+              //.subject(subject)
+              .subject(function () {
+                  var r = projection.rotate(); return { x: r[0] / sens, y: -r[1] / sens };
+              })
+              .on("drag", function () {
+                  var gamma = d3.event.x * sens,
+                  phi = -d3.event.y * sens,
+                  rotate = projection.rotate();
+                  //Restriction for rotating upside-down
+                  phi = phi > 30 ? 30 :
+                  phi < -30 ? -30 :
+                  phi;
+                  projection.rotate([gamma, phi]);
+                  g.selectAll("path.ortho").attr("d", path);
+                  g.selectAll(".focused").classed("focused", focused = false);
+              })
+
+              )
+
+            //Events processing
+
+            .on("mouseover", function (d) {
+                if (ortho === true) {
+                    //infoLabel.text(countryById[d.id])
+                    //.style("display", "inline");
+                } else {
+                    zoneTooltip
+                        .text(countryById[d.id])
+                    .style("left", (d3.event.pageX + 7) + "px")
+                    .style("top", (d3.event.pageY - 15) + "px")
+                    .style("display", "block");
+                }
+            })
+            .on("mouseout", function (d) {
+                if (ortho === true) {
+                    //infoLabel.style("display", "none");
+                } else {
+                    zoneTooltip.style("display", "none");
+                }
+            })
+            .on("mousemove", function () {
+                if (ortho === false) {
+                    zoneTooltip.style("left", (d3.event.pageX + 7) + "px")
+                    .style("top", (d3.event.pageY - 15) + "px");
+                }
+            })            
+            //.append("circle").attrs({ cx: c.x, cy: c.y, r: projection.scale(), fill: "navy" })
+            //Adding extra data when focused
+            ;
+            function focus(d) {
+                if (focused === d) return reset();
+                g.selectAll(".focused").classed("focused", false);
+                d3.select(this).classed("focused", focused = d);
+            }
+
+            function reset() {
+                g.selectAll(".focused").classed("focused", focused = false);
+                infoLabel.style("display", "none");
+                zoneTooltip.style("display", "none");
+
+                //Transforming Map to Globe
+
+                
+                path.projection(projection);
+                g.selectAll("path").transition().duration(5000).attr("d", path)
+                g.selectAll("path").classed("ortho", ortho = true);
+            }
+            var time = Date.now();
+            world.tick = function () {
+                var rotate = [0, 0, 0];
+                var velocity = [.05, 0, 0];
+                var dt = Date.now() - time;
+
+                projection.rotate([rotate[0] + velocity[0] * dt, rotate[1] + velocity[1] * dt, rotate[2] + velocity[2] * dt]);
+                world.attr("d", path);
+            }
+            return world;
+        };
+        
+        //return this;
     }
     this.initialize = new function () {
 
@@ -1229,23 +1497,37 @@ var page = function () {
             .attr("width", thisPage.canvasWidth)
             .attr("height", thisPage.canvasHeight);
         var defs = thisPage.mainSvg.append("defs");
+
+        var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3);
+        thisPage.bigRadius = bigRadius;
+        var topicRadius = Math.round(bigRadius / 4);
+
         thisPage.canvas = thisPage.mainSvg.append("g").attrs({ id: "mainGroup" });
         thisPage.likes = thisPage.mainSvg.append("g").attrs({ id: "likesGroup" });
         thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({ id: "gearGroup" });
-
-        var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3);
-        var topicRadius = Math.round(bigRadius / 4);
-
+        thisPage.globeGroup = thisPage.mainSvg.append("g").attrs({ id: "globeGroup" });
+              
         var gears = thisPage.createGears(bigRadius, topicRadius);
-        thisPage.setGears(gears, true, 800);
-        thisPage.startGears(gears);
+        //thisPage.setGears(gears, true, 800);
+        // thisPage.startGears(gears);
         thisPage.populateTopics(bigRadius, topicRadius);
         thisPage.populateGradients(defs, thisPage.topics);
-       
-        thisPage.createTopicShapes(bigRadius, topicRadius);
-        thisPage.rings(c, topicRadius, bigRadius, "blue");
 
+        thisPage.createTopicShapes(bigRadius, topicRadius);
+        var rings = thisPage.rings(c, topicRadius, bigRadius, "blue");
+
+        
         thisPage.gears = gears;
+        var timer = d3.timer(function () {
+            if(rings) {
+                rings.forEach(function (r, i) {
+                    r.tick();
+                });
+            }
+            if(thisPage.globe) {
+                thisPage.globe.tick();
+            }
+        });
     }
 
 }

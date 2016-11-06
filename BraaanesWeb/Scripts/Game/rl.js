@@ -1280,7 +1280,7 @@ SimpleReinforceAgent.prototype = {
         }
         var update = - (V - b);
         if(update > 0.1) { update = 0.1; }
-        if(update < 0.1) { update = -0.1; }
+        if(update < -0.1) { update = -0.1; }
         this.baselineOutputs[t].dw[0] += update;
         baselineMSE += (V - b) * (V - b);
         vs.push(V);
@@ -1407,7 +1407,7 @@ RecurrentReinforceAgent.prototype = {
         }
         var update = - (V - b);
         if(update > 0.1) { update = 0.1; }
-        if(update < 0.1) { update = -0.1; }
+        if(update < -0.1) { update = -0.1; }
         this.baselineOutputs[t].dw[0] += update;
         baselineMSE += (V-b)*(V-b);
         vs.push(V);
