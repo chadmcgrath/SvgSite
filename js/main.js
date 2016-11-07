@@ -412,7 +412,7 @@ var page = function () {
         var circle = t.shape.select("circle");
         var r = t.radius / 2;
         var center = thisPage.center;
-        var world = thisPage.openEarth(center, thisPage.bigRadius, 30);
+        var world = thisPage.openEarth(center, thisPage.bigRadius, thisPage.bigRadius/10);
         thisPage.globe = world;
         circle
             .transition()
@@ -440,8 +440,7 @@ var page = function () {
                 cy : 0
                 //transform: function (d) { return "translate(" + (-1 * center.x) + ", " + (-1 * center.y) + ")"; }
             });
-        
-       
+              
         var h = thisPage.canvasHeight / 4;
         var w = thisPage.canvasWidth / 4;
         var x = center.x;
@@ -464,7 +463,7 @@ var page = function () {
             world.transition(trans)      
             .attrTween("transform", translateAlong(path.node()))
             .tween("globeScaleChange", function () {
-                var i = d3.interpolate(scale, scale * 10);
+                var i = d3.interpolate(scale, scale * 13);
                 return function (t) {
                     world.projection.scale(i(t));
                 };
