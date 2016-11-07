@@ -958,7 +958,6 @@ var page = function () {
             r: radius,
             transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
         });
-
         g.attr("data-selected", 0);
         var topicCircle = g.append("circle")
         .attr("class", function (d) { return "topicCircle"; })
@@ -968,14 +967,18 @@ var page = function () {
             cy: y,
             r: radius,
             fill: function (d) { return "url(#gradient-" + d.id + ")"; },
-
         })
-        //.on('mouseover', function(d){
-        //    var hover= topicCircle.attrs({ r : function (d) { d.radius * 1.5 } });
-        //})
-        ; g
-
-        .on("click", function (d) {
+        .on('mouseover', function (d) {
+            var c = d3.select(this);
+            g.style("cursor", "pointer");
+            c.attrs({ r: radius * 1.25 });
+        })
+        .on('mouseout', function (d) {
+            var c = d3.select(this);           
+            c.attrs({ r: radius * 1 });
+        });
+                      
+        g.on("click", function (d) {
             var c = d3.select(this);
             var center = thisPage.center;
             if (c.attr("data-selected") == 1) {
@@ -1004,6 +1007,8 @@ var page = function () {
                 .attr("data-selected", 1)
 				.on("end", d.topicClick);
         })
+        
+        
         //; g
         //.append("text")
         //    .text(function (d) { return d.name; })
