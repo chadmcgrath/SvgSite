@@ -307,16 +307,6 @@ var page = function () {
         }
         this.topics.push(likes);
 
-<<<<<<< HEAD
-        //green
-        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
-        qualifications.callback = function(){
-            window.location.href = "BraaanesWeb/Brains.html?rep=1";
-        };
-        this.topics.push(qualifications);
-
-=======
->>>>>>> refs/remotes/origin/master
         var about = new thisPage.topic("About", "About this website.", "maroon", radius);
         about.callback = thisPage.openGears;
         //thisPage.throwItems;
@@ -984,13 +974,8 @@ var page = function () {
         //.on('mouseover', function(d){
         //    var hover= topicCircle.attrs({ r : function (d) { d.radius * 1.5 } });
         //})
-<<<<<<< HEAD
-        ;g
-        
-=======
         ; g
 
->>>>>>> refs/remotes/origin/master
         .on("click", function (d) {
             var c = d3.select(this);
             var center = thisPage.center;
@@ -1020,22 +1005,6 @@ var page = function () {
                 .attr("data-selected", 1)
 				.on("end", d.topicClick);
         })
-<<<<<<< HEAD
-        //;g 
-        //.append("text")
-        //    .text(function (d) { return d.name; })
-        //    .attrs({
-        //        x: x,
-        //        y: y,
-        //        stroke: "white",
-        //        dy: "6em",
-        //        "text-anchor" : "middle"
-        //        //text: (function (d) { return d.name; })
-        //        //r: radius,
-        //        //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
-        //        //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
-        //    })
-=======
         //; g
         //.append("text")
         //    .text(function (d) { return d.name; })
@@ -1049,7 +1018,6 @@ var page = function () {
         //        text: (function (d) { return d.name; })
 
         //    });
->>>>>>> refs/remotes/origin/master
 
         //brittle
         var circles = thisPage.mainSvg.selectAll(".circle-container");
