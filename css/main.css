@@ -136,10 +136,27 @@ img {
 .graticule {
   stroke: #aaa;
 }
-
+.sphere-background
+ {
+    fill: blue;  
+  }
 .equator {
-  stroke: #0E0B16;
- 
+  stroke: #0E0B16; 
+}
+.zoneTooltip {
+  position: absolute;
+  display: none;
+  pointer-events: none;
+  background: #fff;
+  padding: 3px;
+  text-align: left;
+  border: solid #ccc 1px;
+  color: #666;
+  font-size: 12px;
+  font-family: sans-serif;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;  
 }
 tml, body {
 	height: 100%;

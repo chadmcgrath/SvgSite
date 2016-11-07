@@ -106,6 +106,8 @@ var page = function () {
         this.ease = d3.easeElastic,
         this.vector = null,
         this.radius = radius,
+        this.reset = function () {
+        },
         this.topicClick = function (event) {
             //thisPage.rotateTopics(); 
             var subTopics = topic.subTopics;
@@ -120,13 +122,13 @@ var page = function () {
 
     }
     this.resetAll = function (topic, duration, setGears) {
-        thisPage.changeHeight(window.innerHeight);
+        thisPage.changeHeight(window.innerHeight);                               
         d3.selectAll(".gear").attr("visibility", "visible");
         if (!duration)
             duration = 0;
         var c = thisPage.center;
         var v = topic.vector;
-
+        topic.shape.select("circle"). attr("fill", "url(#gradient-" + topic.id + ")");
         topic.shape
        .attr("data-selected", 0)
        .attrs({
@@ -134,13 +136,13 @@ var page = function () {
            cy: c.y,
            r: topic.radius,//function(d) { return r; },
            transform: function () { return "translate(" + v.x + ", " + v.y + ")"; }
-       })
-            .transition()
-            .duration(duration)
-            .ease(d3.easeExp)
-            .on("end", function () {
-                thisPage.popCircle(topic.shape.select("circle"), topic.radius);
-            });
+       })        
+       .transition()
+       .duration(duration)
+       .ease(d3.easeExp)
+       .on("end", function () {
+            thisPage.popCircle(topic.shape.select("circle"), topic.radius);
+        });
         if (setGears) {
             thisPage.setGears(thisPage.gears, setGears, 0);
         }
@@ -240,8 +242,10 @@ var page = function () {
                 .attrs({ "transform": "translate(0, 0)" })
                 .each(function () {
                     repeat(pathData, rotations, 0);
+                })
+                .on("end", function () {
                 });
-
+                
                 function repeat(pathData, rotations, i) {
 
                     var delay = 0;
@@ -281,7 +285,8 @@ var page = function () {
         //green
         var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
         qualifications.callback = function () {
-            window.location.href = "BraaanesWeb/Brains.html?rep=1";
+            var w = window.open("", '_blank');
+            w.location.href = "BraaanesWeb/Brains.html?rep=1";
         };
         this.topics.push(qualifications);
 
@@ -289,17 +294,22 @@ var page = function () {
         ai.callback = thisPage.superNova;
         this.topics.push(ai);
 
-        //var likes = new thisPage.topic("Likes", "Some sites I like.", "#2170589", radius);
-        //likes.callback = thisPage.throwItems;
-        //this.topics.push(likes);
-
         //yellow
         var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBF00", radius);
         likes.callback = thisPage.openSolarSystem;
+        likes.reset = function () {
+            var globe = thisPage.globe;
+            if(globe){
+                thisPage.globe.attr("visibility", "hidden");
+                // free up rotation resources
+                thisPage.globe.remove();
+            }
+        }
         this.topics.push(likes);
 
         var about = new thisPage.topic("About", "About this website.", "maroon", radius);
-        about.callback = thisPage.throwItems;
+        about.callback = thisPage.openGears;
+        //thisPage.throwItems;
         this.topics.push(about);
 
         for (var i = 0; i < this.topics.length; ++i) {
@@ -387,27 +397,36 @@ var page = function () {
             .attr("offset", "100%")
             .attr("stop-color", "#FB8933");
     }
+    this.openGears = function (args) {
+        var topicRadius = args[0].radius;
+        if (!thisPage.gears) {
+            var gears = thisPage.createGears(thisPage.bigRadius, topicRadius);                        
+            thisPage.gears = gears;
+        }
+        thisPage.setGears(thisPage.gears, true, 800);
+        thisPage.startGears(thisPage.gears);
+    }
     this.openSolarSystem = function (args) {
 
         var t = args[0];
         var circle = t.shape.select("circle");
         var r = t.radius / 2;
         var center = thisPage.center;
-        var globe = thisPage.openEarth(center, thisPage.bigRadius, 30);
-        thisPage.globe = globe;
+        var world = thisPage.openEarth(center, thisPage.bigRadius, 30);
+        thisPage.globe = world;
         circle
             .transition()
             .duration(0)
             .ease(d3.easeExp)
             .attrs({
                 fill: "url(#sun-gradient)",
-                r: (t.radius * 9)
+                r: (t.radius * 12)
             })
             .transition()
             .duration(100)
             .ease(d3.easeExp)
             .attrs({
-                r: (t.radius * 5)
+                r: (t.radius * 8)
             })
         var trans =
          d3.transition()
@@ -417,7 +436,9 @@ var page = function () {
         circle.transition(trans)
             .attrs({
                 r: (t.radius * 2),
-                transform: function (d) { return "translate(" + (-1 * center.x) + ", " + (-1 * center.y) + ")"; }
+                cx: 0,
+                cy : 0
+                //transform: function (d) { return "translate(" + (-1 * center.x) + ", " + (-1 * center.y) + ")"; }
             });
         
        
@@ -426,20 +447,19 @@ var page = function () {
         var x = center.x;
         var y = center.y;
         var points = [
-            
-            [x+w, x+h],
+            [0,0],
+            [w, h],
             [-x -w, -y - h],
             [0, 0],
         ];
         var path = thisPage.mainSvg.append("path")
         .data([points])
-        .attr("d", d3.line());
+        .attr("d", d3.line())
+        .style('opacity', 0);
         //.tension(0) // Catmull–Rom
         //.interpolate("cardinal-closed"));
-        var world = thisPage.globe;
         var scale = world.projection.scale();
         transition();
-
         function transition() {           
             world.transition(trans)      
             .attrTween("transform", translateAlong(path.node()))
@@ -460,9 +480,6 @@ var page = function () {
                 };
             };
         }
-    }
-    this.globeSwallow = function () {
-        var sphere = thisPage.sphere;
     }
     this.dropToPage = function (args) {
         var topic = args[0], subTopics = args[1], topics = thisPage.topics;
@@ -567,11 +584,10 @@ var page = function () {
         //    });
         //}
     }
-
     this.blackHole = function (args) {
         //$(".sphere-rotating").hide();
         var expandDuration = 800;
-        thisPage.gearTimer.stop();
+        //thisPage.gearTimer.stop();
         var t = args[0];
         var c = thisPage.center;
         var scale = .1;
@@ -963,7 +979,8 @@ var page = function () {
         .on("click", function (d) {
             var c = d3.select(this);
             var center = thisPage.center;
-            if (c.attr("data-selected") == 1) {               
+            if (c.attr("data-selected") == 1) {
+                d.reset()
                 thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .60, .04, g);
                 return;
             }
@@ -988,20 +1005,19 @@ var page = function () {
                 .attr("data-selected", 1)
 				.on("end", d.topicClick);
         })
-        //;g 
+        //; g
         //.append("text")
         //    .text(function (d) { return d.name; })
+        //    .attr("font-family", "sans-serif")
         //    .attrs({
         //        x: x,
-        //        y: y,
-        //        stroke: "white",
-        //        dy: "6em",
-        //        "text-anchor" : "middle"
-        //        //text: (function (d) { return d.name; })
-        //        //r: radius,
-        //        //fill: function(d) { return "url(#gradient-" + d.id + ")"; },
-        //        //transform : function(d) {return "translate(" + d.vector.x + ", " + d.vector.y+ ")";}
-        //    })
+        //        y: y,//- 2 * topicCircle.attr("r"),
+        //        stroke: "black",
+        //        //dy: "6em",
+        //        "text-anchor": "middle",
+        //        text: (function (d) { return d.name; })
+
+        //    });
 
         //brittle
         var circles = thisPage.mainSvg.selectAll(".circle-container");
@@ -1309,9 +1325,7 @@ var page = function () {
 
         //var projectionMap = d3.geoEquirectangular()
         //.scale(145)
-        //.translate([c.x, c.y])
-
-        
+        //.translate([c.x, c.y])        
 
         var path = d3.geoPath()           
         .projection(projection);
@@ -1321,13 +1335,11 @@ var page = function () {
         //.attr("width", mapWidth)
         //.attr("height", mapHeight);
 
-        //var zoneTooltip = d3.select("div#map").append("div").attr("class", "zoneTooltip"),
+        
         //infoLabel = d3.select("div#map").append("div").attr("class", "infoLabel");
 
         var g = thisPage.globeGroup;
-
-       
-        
+        var zoneTooltip = d3.select('body').append('div').attr("class", "zoneTooltip");
         //Rotate to default before animation
 
         function defaultRotate() {
@@ -1351,53 +1363,36 @@ var page = function () {
         var color = d3.scaleOrdinal(d3.schemeCategory10);
         // ugly
         var worldData = worldClientJson;
-        // var countries = worldCountriesJson;
+        var countryData = worldCountryNames;
+       
+        var isTicking = true;
 
-        //return
-        var w = ready(null, worldData, null);
+        var w = ready(null, worldData, countryData);
         w.projection = projection;
         return w;
         
         function ready(error, world, countryData) {
 
-            var countryById = {},
+            var countryById = {}, lifeExpectancyById = {},
             countries = topojson.feature(world, world.objects.countries).features,
-                neighbors = topojson.neighbors(world.objects.countries.geometries);
+            neighbors = topojson.neighbors(world.objects.countries.geometries);
 
             //Adding countries by name
+            countryData.forEach(function (d) {
+                countryById[d.id] = d.name;               
+            });
+            
+            g.selectAll('path.sphere').data([{ type: 'Sphere' }]).enter().append('path')
+            .classed('sphere-background', true)
+            .attr('d', path)
+            .attr("r", projection.scale());
 
-            //countryData.forEach(function (d) {
-            //    countryById[d.id] = d.name;
-            //});
-
-            //Drawing countries on the globe
-            var world = g
-            .selectAll("path").data(countries)
+            g.selectAll('path.sphere2')
+                .data(countries)
             .enter()
             .append("path")
             .attr("class", "mapData")
             .attr("d", path)
-                //.on("click", function (d) {
-                //    alert("");
-                //    if (focused === d) return reset();
-                //    g.selectAll(".focused").classed("focused", false);
-                //    d3.select(this).classed("focused", focused = d);
-                //    infoLabel.text(countryById[d.id])
-                //    .style("display", "inline");
-
-                //    //Transforming Globe to Map
-
-                //    if (ortho === true) {
-                //        defaultRotate();
-                //        setTimeout(function () {
-                //            g.selectAll(".ortho").classed("ortho", ortho = false);
-                //            projection = projectionMap;
-                //            path.projection(projection);
-                //            g.selectAll("path").transition().duration(5000).attr("d", path);
-                //        }
-                //        , 1600);
-                //    }
-                //})
             .attr("fill", function (d, i) {
                 return color(d.color = d3.max(neighbors[i], function (n) {
                     return countries[n].color;
@@ -1405,6 +1400,33 @@ var page = function () {
             })
             .classed("ortho", ortho = true)
             //Drag event
+            
+            var world = g.selectAll("path")
+                //.on("touchstart", nozoom)
+                //.on("touchmove", nozoom)
+                .on("click", function (d) {
+                    alert("");
+                    if (d3.event.defaultPrevented) return; // dragged
+                    
+                    if (focused === d) return reset();
+                    g.selectAll(".focused").classed("focused", false);
+                    d3.select(this).classed("focused", focused = d);
+                    infoLabel.text(countryById[d.id])
+                    .style("display", "inline");
+
+                    //Transforming Globe to Map
+
+                    if (ortho === true) {
+                        defaultRotate();
+                        setTimeout(function () {
+                            g.selectAll(".ortho").classed("ortho", ortho = false);
+                            projection = projectionMap;
+                            path.projection(projection);
+                            g.selectAll("path").transition().duration(5000).attr("d", path);
+                        }
+                        , 1600);
+                    }
+                })
             .call(
                 d3.drag()
               //.subject(subject)
@@ -1412,6 +1434,7 @@ var page = function () {
                   var r = projection.rotate(); return { x: r[0] / sens, y: -r[1] / sens };
               })
               .on("drag", function () {
+                  
                   var gamma = d3.event.x * sens,
                   phi = -d3.event.y * sens,
                   rotate = projection.rotate();
@@ -1423,39 +1446,44 @@ var page = function () {
                   g.selectAll("path.ortho").attr("d", path);
                   g.selectAll(".focused").classed("focused", focused = false);
               })
-
+              
               )
 
             //Events processing
-
+                       
             .on("mouseover", function (d) {
-                if (ortho === true) {
-                    //infoLabel.text(countryById[d.id])
-                    //.style("display", "inline");
-                } else {
+                isTicking = false;
+                //if (ortho === true) {
+                //    infoLabel.text(countryById[d.id])
+                //    .style("display", "inline");
+                //} else {
                     zoneTooltip
                         .text(countryById[d.id])
                     .style("left", (d3.event.pageX + 7) + "px")
                     .style("top", (d3.event.pageY - 15) + "px")
                     .style("display", "block");
-                }
+                //}
             })
             .on("mouseout", function (d) {
-                if (ortho === true) {
-                    //infoLabel.style("display", "none");
-                } else {
+                isTicking = true;
+                //if (ortho === true) {
+                //    infoLabel.style("display", "none");
+                //} else {
                     zoneTooltip.style("display", "none");
-                }
+                //}
             })
             .on("mousemove", function () {
                 if (ortho === false) {
                     zoneTooltip.style("left", (d3.event.pageX + 7) + "px")
                     .style("top", (d3.event.pageY - 15) + "px");
                 }
-            })            
-            //.append("circle").attrs({ cx: c.x, cy: c.y, r: projection.scale(), fill: "navy" })
+            })
+
             //Adding extra data when focused
             ;
+            function nozoom() {
+                d3.event.preventDefault();
+            }
             function focus(d) {
                 if (focused === d) return reset();
                 g.selectAll(".focused").classed("focused", false);
@@ -1474,13 +1502,18 @@ var page = function () {
                 g.selectAll("path").transition().duration(5000).attr("d", path)
                 g.selectAll("path").classed("ortho", ortho = true);
             }
+            var currentTime = 0;
             var time = Date.now();
             world.tick = function () {
+               
+                if (isTicking === false) {                    
+                    return;
+                }
                 var rotate = [0, 0, 0];
-                var velocity = [.05, 0, 0];
-                var dt = Date.now() - time;
-
-                projection.rotate([rotate[0] + velocity[0] * dt, rotate[1] + velocity[1] * dt, rotate[2] + velocity[2] * dt]);
+                var velocity = [3, 0, 0];
+                ++currentTime;
+                var dt = currentTime;
+                projection.rotate([rotate[0] + velocity[0] * dt, projection.rotate()[1], rotate[2] + velocity[2] * dt]);
                 world.attr("d", path);
             }
             return world;
@@ -1495,29 +1528,27 @@ var page = function () {
         thisPage.mainSvg = d3.select("body").append("svg")
             .attr("id", "svg")
             .attr("width", thisPage.canvasWidth)
-            .attr("height", thisPage.canvasHeight);
-        var defs = thisPage.mainSvg.append("defs");
+            .attr("height", thisPage.canvasHeight);        
 
         var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3);
         thisPage.bigRadius = bigRadius;
         var topicRadius = Math.round(bigRadius / 4);
 
+        
+        thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({ id: "gearGroup" });                     
+        
+        
         thisPage.canvas = thisPage.mainSvg.append("g").attrs({ id: "mainGroup" });
-        thisPage.likes = thisPage.mainSvg.append("g").attrs({ id: "likesGroup" });
-        thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({ id: "gearGroup" });
-        thisPage.globeGroup = thisPage.mainSvg.append("g").attrs({ id: "globeGroup" });
-              
-        var gears = thisPage.createGears(bigRadius, topicRadius);
-        //thisPage.setGears(gears, true, 800);
-        // thisPage.startGears(gears);
         thisPage.populateTopics(bigRadius, topicRadius);
-        thisPage.populateGradients(defs, thisPage.topics);
-
         thisPage.createTopicShapes(bigRadius, topicRadius);
+
         var rings = thisPage.rings(c, topicRadius, bigRadius, "blue");
 
-        
-        thisPage.gears = gears;
+        thisPage.likes = thisPage.mainSvg.append("g").attrs({ id: "likesGroup" });
+        thisPage.globeGroup = thisPage.mainSvg.append("g").attrs({ id: "globeGroup" });
+        var defs = thisPage.mainSvg.append("defs");
+        thisPage.populateGradients(defs, thisPage.topics);       
+       
         var timer = d3.timer(function () {
             if(rings) {
                 rings.forEach(function (r, i) {
@@ -1533,4 +1564,16 @@ var page = function () {
 }
 var utilities = new utilities();
 var windowPage = new page();
+// added to prototype: eew
+d3.selection.prototype.dblTap = function (callback) {
+    var last = 0;
+    return this.each(function () {
+        d3.select(this).on("touchstart", function (e) {
+            if ((d3.event.timeStamp - last) < 500) {
+                return callback(e);
+            }
+            last = d3.event.timeStamp;
+        });
+    });
+}
 //windowPage.initialize();
