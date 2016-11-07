@@ -75,7 +75,6 @@ function vector(x, y) {
     this.angle = function angle() {
         return Math.atan2(y, x);
     }
-
 }
 function CheckRecoil(x, y)
 {
@@ -93,7 +92,9 @@ function CheckRecoil(x, y)
     });
     return recoiled;
 }
-
+// greenies aren't allowed to overlap too closely with each other.
+function CheckProximity() {
+}
 // recoil off the sides of the window
 function Recoil(agent) {
     var recoil = -1 * (agent.engine + 2);
@@ -112,11 +113,6 @@ function Recoil(agent) {
 
 }
 
-function isOnCanvas(x, y) {
-    if (x < 0 || x > canvasWidth || y < 0 || y > canvasHeight)
-        return false;
-    return true;
-}
 var agent = function agent(shape, id, team, height, width, gunPower, engine, turnRate, shieldMax, brain) {
     var that = this;
     this.type = 1;
@@ -254,11 +250,9 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
         var x = this.center.x;
         var y = this.center.y;
         var goVector = this.getBestAgentTarget();
-        //var recoiled = CheckRecoil(x,y);
-        
-        //if (recoiled === false) {
-            this.homeIn(angle, goVector);
-        //}  
+       
+        this.homeIn(angle, goVector);
+         
         // reset engine in case they were slowed down by a shot.
             this.engine = $("#engine").val();
         return true;
@@ -586,7 +580,7 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
         enemy = this.target;
         var reward = damage;// * (enemy.shieldMax - enemy.shield + 1);
         
-        enemy.takeHit(damage, gun.color, damage);
+        enemy.takeHit(damage, gun.color, damage * 2);
         if (damage <= 0)
             return;
         if (enemy.dead == true) {
@@ -618,7 +612,7 @@ var agent = function agent(shape, id, team, height, width, gunPower, engine, tur
         // hack todo hacky hack hack let's give the quick a chance 
         
         if (blast && that.team === 2) {           
-            that.engine = this.engine - blast;
+            this.engine = this.engine - blast;
         }
 
         var circleColor = "red";
@@ -913,7 +907,7 @@ function openCanvas(width, height, gunPower, spin, shield, engine, isUseragent, 
             var brain = createBrain(agentCount, newagent, .001);
             brain.learning = false;
             if (i === 0) {
-                brain = createBrain(agentCount, newagent, .15);
+                brain = createBrain(agentCount, newagent, .1);
             }
             if (!originalAgentList || originalAgentList.length < 1) {
                 //if(team === 1){	
@@ -1115,12 +1109,12 @@ function createBrain(numagents, newagent, epsilon) {
 
     var spec = {}
     spec.update = 'qlearn'; // qlearn | sarsa
-    spec.gamma = 0.7; // discount factor, [0, 1)
+    spec.gamma = 0.9; // discount factor, [0, 1)
     spec.epsilon = epsilon;//0.2; // initial epsilon for epsilon-greedy policy, [0, 1)
-    spec.alpha = 0.005; // value function learning rate
+    spec.alpha = 0.0001; // value function learning rate
     spec.experience_add_every = 1; // number of time steps before we add another experience to replay memory
     spec.experience_size = 20000; // size of experience
-    spec.learning_steps_per_iteration = 50;
+    spec.learning_steps_per_iteration = 100;
     spec.tderror_clamp = 1.0; // for robustness
     spec.num_hidden_units = arrayLength * 2; // number of neurons in hidden layer
 
