@@ -59,6 +59,8 @@ iframe,
 img,
 svg,
 video {
+    display: flex;
+    justify-content: center;
     vertical-align: middle;
 }
 
@@ -171,7 +173,11 @@ tml, body {
 .work
 {
 	display:none;
-	color
+}
+.circle-container, .circle-container g {
+    display: flex;
+  align-items: center;
+  justify-content: center;
 }
  
   

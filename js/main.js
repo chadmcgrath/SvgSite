@@ -4,11 +4,11 @@
 
 var utilities = function () {
     // this transforms a color through from blue to red. it's based soley on rbg values, so doen't really map to light's frequency.
-    var colorBleed = function (current, max) {
+    this.colorBleed = function (current, max) {
 
         var factor = current / max;
-        var blue = red = green = 0;
-
+        var blue, red, green;
+        blue = red = green = 0;
         var colorProduct = 255 * 4;
 
         if (factor > .75) {
@@ -69,9 +69,6 @@ var utilities = function () {
 }
 var page = function () {
     var thisPage = this;
-    var canvas = null;
-    var distort = null;
-    var mainSvg = null;
     this.loadDistortion = function () {
         var el = document.getElementById('svg');
         thisPage.distort = new DVG(el, DVG.STATIC_INTERPOLATION, 4);
@@ -84,6 +81,8 @@ var page = function () {
         thisPage.canvasHeight = h;
     }
     this.center = new utilities.vector(parseInt(window.innerWidth / 2), parseInt(window.innerHeight / 2));
+    this.cLeft = new utilities.vector(parseInt(window.innerWidth / 4), parseInt(window.innerHeight / 2));
+    this.cRight = new utilities.vector(parseInt(window.innerWidth * 3 / 4), parseInt(window.innerHeight/2));
     this.getRectCenter = function (item, point, scale) {
         if (!scale) {
             scale = 1;
@@ -94,9 +93,10 @@ var page = function () {
         var translate = (point.x - offsetX) + "," + (point.y - offsetY);
         return translate;
     }
-    this.topic = function (name, description, color, radius) {
+    this.topic = function (name, id, description, color, radius, icon) {
         var topic = this;
-        this.id = name,
+        this.icon = icon,
+        this.id = id,
         this.name = name,
         this.description = description,
         this.shape = null,
@@ -121,12 +121,12 @@ var page = function () {
         }
 
     }
-    this.resetAll = function (topic, duration, setGears) {
+    this.resetAll = function (topic, duration, setGears, center) {
         thisPage.changeHeight(window.innerHeight);                               
         d3.selectAll(".gear").attr("visibility", "visible");
         if (!duration)
             duration = 0;
-        var c = thisPage.center;
+        var c = center;
         var v = topic.vector;
         topic.shape.select("circle"). attr("fill", "url(#gradient-" + topic.id + ")");
         topic.shape
@@ -164,14 +164,13 @@ var page = function () {
         }
         var pos = path.getPointAtLength(counter);   //get the position (see Raphael docs)
         e.attrs({ cx: pos.x, cy: pos.y });  //set the circle position
-
         counter++; // count the step counter one up
     };
-    this.spiral = function (center, group, rotations, duration) {
-        var c = thisPage.center;
+    this.spiral = function (topics, center, group, rotations, duration) {
+        var c = center;
         rotations = 360 * rotations;
         var smallRad = 15;
-        group.data(thisPage.topics)
+        group.data(topics)
             .attr("r", smallRad)
             .each(cycle);
         var ease = d3.easeExp;
@@ -201,7 +200,6 @@ var page = function () {
                 });
 
         }
-
     }
     this.popCircle = function (el, r) {
         var el = el.transition()
@@ -211,12 +209,11 @@ var page = function () {
 					.duration(75)
 					.attr("r", r)
         //.ease(d3.easeBounce)
+        $(".topic-icon").show();
     }
-    this.orbit = function (bigRadius, count, rotations, time, scaleBig, scaleSmall, group) {
+    this.orbit = function (bigRadius, count, rotations, time, scaleBig, scaleSmall, group, center) {
         var rad = bigRadius * 1;
         var dr = Math.PI / count;
-        var center = thisPage.center;
-
         group
             .each(function (d, i) {
 
@@ -255,7 +252,7 @@ var page = function () {
                     //var isCentering = i%2;
                     var p = pathData[x];
                     if (i > rotations) {
-                        thisPage.resetAll(c.data()[0]);
+                        thisPage.resetAll(c.data()[0],null,null,center);
                         return;
                     } else if (i === 1) {
                         delay = Math.random() * 300;
@@ -276,48 +273,58 @@ var page = function () {
                 }
             });
     }
-    this.populateTopics = function (bigRadius, radius) {
+    
+    this.populateTopics = function (items, bigRadius, radius) {
+        var page = this;    
+        var topics = [];
+        items.forEach( (x, i) => { 
+            topics.push(new thisPage.topic(x[0], x[0] +i, x[0], utilities.colorBleed(i, items.length), radius, x[1]));
+        });    
+        // var work = new thisPage.topic("Work", "People I've worked with.", "navy", radius);
+        // work.callback = this.dropToPage;
+        // this.topics.push(work);
 
-        var work = new thisPage.topic("Work", "People I've worked with.", "navy", radius);
-        work.callback = this.dropToPage;
-        this.topics.push(work);
+        // //green
+        // var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
+        // qualifications.callback = function () {
+        //     var w = window.open("", '_blank');
+        //     w.location.href = "BraaanesWeb/Brains.html?rep=1";
+        // };
+        // this.topics.push(qualifications);
 
-        //green
-        var qualifications = new thisPage.topic("Qualifications", "Resume and profile link.", "#265C00", radius);
-        qualifications.callback = function () {
-            var w = window.open("", '_blank');
-            w.location.href = "BraaanesWeb/Brains.html?rep=1";
-        };
-        this.topics.push(qualifications);
+        // var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "#FF5000", radius);
+        // ai.callback = thisPage.superNova;
+        // this.topics.push(ai);
 
-        var ai = new thisPage.topic("Simulations", "Some simple machine learning demos.", "#FF5000", radius);
-        ai.callback = thisPage.superNova;
-        this.topics.push(ai);
+        // //yellow
+        // var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBF00", radius);
+        // likes.callback = thisPage.openSolarSystem;
+        // likes.reset = function () {
+        //     var globe = thisPage.globe;
+        //     if(globe){
+        //         thisPage.globe.attr("visibility", "hidden");
+        //         // free up rotation resources
+        //         thisPage.globe.remove();
+        //     }
+        // }
+        // this.topics.push(likes);
 
-        //yellow
-        var likes = new thisPage.topic("Likes", "Some sites I like.", "#FFBF00", radius);
-        likes.callback = thisPage.openSolarSystem;
-        likes.reset = function () {
-            var globe = thisPage.globe;
-            if(globe){
-                thisPage.globe.attr("visibility", "hidden");
-                // free up rotation resources
-                thisPage.globe.remove();
-            }
-        }
-        this.topics.push(likes);
+        // var about = new thisPage.topic("About", "About this website.", "maroon", radius);
+        // about.callback = thisPage.openGears;
+        // //thisPage.throwItems;
+        // this.topics.push(about);
 
-        var about = new thisPage.topic("About", "About this website.", "maroon", radius);
-        about.callback = thisPage.openGears;
-        //thisPage.throwItems;
-        this.topics.push(about);
-
-        for (var i = 0; i < this.topics.length; ++i) {
-            const topic = this.topics[i];
-            var angle = Math.PI * 2 / this.topics.length * i;
+		//var extra = new thisPage.topic("Extra!", "Extra", "purple", radius);
+        //extra.callback = thisPage.openGears;           
+        //this.topics.push(extra);
+				
+        for (var i = 0; i < topics.length; ++i) {
+            const topic = topics[i];
+            var angle = Math.PI * 2 / topics.length * i;
             topic.vector =
                 new utilities.vector(Math.sin(angle) * bigRadius, -1 * Math.cos(angle) * bigRadius);
         }
+        return topics;
     }
     this.populateGradients = function (defs, data) {
 
@@ -328,14 +335,14 @@ var page = function () {
 	        .attr("cx", "35%")	//Move the x-center location towards the left
 	        .attr("cy", "35%")	//Move the y-center location towards the top
 	        .attr("r", "60%");	//Increase the size of the "spread" of the gradient
-        radialGradients.append("stop")
-	        .attr("offset", "0%")
-	        .attr("stop-color", function (d) { return d3.rgb(d.color).brighter(1); });
+        // radialGradients.append("stop")
+	    //     .attr("offset", "0%")
+	    //     .attr("stop-color", function (d) { return d3.rgb(d.color).brighter(1); });
         //Then the actual color almost halfway
         radialGradients.append("stop")
             .attr("offset", "50%")
             .attr("stop-color", function (d) { return d.color; });
-        //Finally a darker color at the outside
+        // //Finally a darker color at the outside
         radialGradients.append("stop")
             .attr("offset", "100%")
             .attr("stop-color", function (d) { return d3.rgb(d.color).darker(3); });
@@ -455,7 +462,7 @@ var page = function () {
         .data([points])
         .attr("d", d3.line())
         .style('opacity', 0);
-        //.tension(0) // Catmull–Rom
+        //.tension(0) // Catmullï¿½Rom
         //.interpolate("cardinal-closed"));
         var scale = world.projection.scale();
         transition();
@@ -933,135 +940,7 @@ var page = function () {
             return true;
         return false;
     }
-    this.createTopicShapes = function (bigRadius, radius) {
-
-
-        var x = thisPage.center.x;// + radius;//+ (Math.sin(angle)) * bigRadius;
-        var y = thisPage.center.y;// + radius;// + (Math.cos(angle)) * bigRadius;
-        var xPadding = 300;
-        var yPadding = 30;
-        var translate = x + "," + y;
-        var container =
-        thisPage.mainSvg.append("g")
-            .attr("id", "topicCircles")
-            .selectAll("circle")
-        .data(thisPage.topics)
-        .enter();
-
-        var g = container.append("g")
-        .attr("id", function (d) { return "container-" + d.id; })
-        .attr("class", "circle-container")
-        .attr("data-selected", 0)
-        .attrs({
-            cx: x,
-            cy: y,
-            r: radius,
-            transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
-        });
-        g.attr("data-selected", 0);
-        var topicCircle = g.append("circle")
-        .attr("class", function (d) { return "topicCircle"; })
-        .attr("id", function (d) { return "topic-" + d.id; })
-        .attrs({
-            cx: x,
-            cy: y,
-            r: radius,
-            fill: function (d) { return "url(#gradient-" + d.id + ")"; },
-        })
-        .on('mouseover', function (d) {
-            var c = d3.select(this);
-            g.style("cursor", "pointer");
-            c.attrs({ r: radius * 1.25 });
-        })
-        .on('mouseout', function (d) {
-            var c = d3.select(this);           
-            c.attrs({ r: radius * 1 });
-        });
-                      
-        g.on("click", function (d) {
-            var c = d3.select(this);
-            var center = thisPage.center;
-            if (c.attr("data-selected") == 1) {
-                d.reset()
-                thisPage.orbit(bigRadius, thisPage.topics.length, 8, 1000, .60, .04, g);
-                return;
-            }
-            d3.selectAll(".circle-container").each(function (d2, i) {
-                if (d.id != this.id) {
-                    var p = d2.vector;
-                    var translate = p.x + "," + p.y;
-                    d3.select(this)
-                    .transition()
-                    .duration(1500)
-                    .ease(d2.ease)
-                    .attrs({ "transform": "translate(" + translate + ")" })
-                    .attr("data-selected", 0)
-                }
-            });
-            var translate = 0 + "," + 0;
-            c
-                .transition()
-                .duration(250)
-                .ease(d.ease)
-                .attrs({ "transform": "translate(" + translate + ")" })
-                .attr("data-selected", 1)
-				.on("end", d.topicClick);
-        })
-        
-        
-        //; g
-        //.append("text")
-        //    .text(function (d) { return d.name; })
-        //    .attr("font-family", "sans-serif")
-        //    .attrs({
-        //        x: x,
-        //        y: y,//- 2 * topicCircle.attr("r"),
-        //        stroke: "black",
-        //        //dy: "6em",
-        //        "text-anchor": "middle",
-        //        text: (function (d) { return d.name; })
-
-        //    });
-
-        //brittle
-        var circles = thisPage.mainSvg.selectAll(".circle-container");
-        var nodes = circles.nodes();
-        var count = thisPage.topics.length;
-
-        for (var i = 0; i < count; ++i) {
-            const topic = thisPage.topics[i];
-            topic.shape = d3.select(nodes[i]);
-
-        }
-        thisPage.spiral(thisPage.center, d3.selectAll(".circle-container"), 1, 1500);
-
-        function subTopic(name, width, height) {
-            this.name = name,
-            this.height = height
-            var shape = thisPage.canvas.append("rect")
-                                        .attr("x", 0)
-                                        .attr("y", 0)
-                                        .attr("width", width)
-                                        .attr("heigth", height)
-            shape.attrs({
-                stroke: 'darkblue',
-                'stroke-width': 3,
-                fill: 'silver'
-            });
-        }
-        function getSubTopics(i, topic) {
-            if (i === 0) {
-                var h = 10;
-                var w = 50;
-                var a = new subTopic("TacoBell", w, h);
-                var b = new subTopic("KFC", w, h);
-                var c = new subTopic("Allargan", w, h);
-                var d = new subTopic("Latisse", w, h);
-                return [a, b, c, d];
-            }
-            return [];
-        }
-    }
+    
     this.throwItems = function (args) {
         return;
         var items = args[0];
@@ -1525,6 +1404,104 @@ var page = function () {
         
         //return this;
     }
+    this.createTopicShapes = function (bigRadius, radius, topics, center, id, landingCenter) {
+
+        var x = center.x;// + radius;//+ (Math.sin(angle)) * bigRadius;
+        var y = center.y;// + radius;// + (Math.cos(angle)) * bigRadius;
+        var container =
+        thisPage.mainSvg.append("g")
+            .attr("id", `topicCircles-${id}`)
+            .selectAll("circle")
+        .data(topics)
+        .enter();
+
+        var g = container.append("g")
+        .attr("id", function (d) { return "container-" + d.id; })
+        .attr("class", "circle-container")
+        .attr("data-selected", 0)
+        .attrs({
+            cx: x,
+            cy: y,
+            r: radius,
+            transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
+        });
+        
+        g.attr("data-selected", 0);
+        var topicCircle = g.append("circle")
+        .attr("class", function (d) { return "topicCircle"; })
+        .attr("id", function (d) { return "topic-" + d.id; })
+        .attrs({
+            cx: x,
+            cy: y,
+            r: radius,
+            fill: function (d) { return "url(#gradient-" + d.id + ")"; },
+        })
+        .on('mouseover', function (d) {
+            var c = d3.select(this);
+            g.style("cursor", "pointer");
+            c.attrs({ r: radius * 1.5 });
+        })
+        .on('mouseout', function (d) {
+            var c = d3.select(this);           
+            c.attrs({ r: radius * 1 });
+        });      
+        
+        var nodes = g.nodes();
+        var count = topics.length;
+
+        for (var i = 0; i < count; ++i) {
+            const topic = topics[i];
+            topic.shape = d3.select(nodes[i]);
+        }
+        var icon = g.append("g").attr("class", "icon-container").append(d =>  {
+            return d.icon;
+        });
+        var iconSize = 1.1 * radius;
+        //var iconBox= icon.getBBox();
+        icon.attr("class", function (d) { return "topic-icon"; })
+        .attr("id", function (d) { return "icon-" + d.id; })
+        .attrs({
+            x: x - iconSize/2,
+            y: y - iconSize/2,
+            width: iconSize,
+            height: iconSize,
+            transform: function (d) { return "translate(" + d.vector.x + ", " + d.vector.y + ")"; }
+            //fill: function (d) { return "url(#gradient-" + d.id + ")"; },
+        })      
+        return g;   
+    }
+    this.circleClick = function(g, bigRadius, count, center, destination)
+    {
+        g.on("click", function (event, d) {
+            var c = d3.select(this);
+            if (c.attr("data-selected") == 1) {
+                d.reset()
+                thisPage.orbit(bigRadius, count, 4, 500, .60, .04, g, center);
+                return;
+            }
+
+            d3.selectAll(".circle-container").each(function (d2, i) {
+                if (d.id != this.id) {
+                    var p = d2.vector;
+                    var translate = p.x + "," + p.y;
+                    d3.select(this)
+                    .transition()
+                    .duration(1500)
+                    .ease(d2.ease)
+                    .attrs({ "transform": "translate(" + translate + ")" })
+                    .attr("data-selected", 0)
+                }
+            });
+            var translate = 0 + "," + 0;
+            c
+                .transition()
+                .duration(250)
+                .ease(d.ease)
+                .attrs({ "transform": "translate(" + translate + ")" })
+                .attr("data-selected", 1)
+				.on("end", d.topicClick);
+        })
+    }
     this.initialize = new function () {
 
         var c = thisPage.center;
@@ -1534,25 +1511,92 @@ var page = function () {
             .attr("width", thisPage.canvasWidth)
             .attr("height", thisPage.canvasHeight);        
 
-        var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 3);
+        var bigRadius = Math.round(Math.min(thisPage.canvasWidth, thisPage.canvasHeight) / 5);
         thisPage.bigRadius = bigRadius;
-        var topicRadius = Math.round(bigRadius / 4);
-
-        
-        thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({ id: "gearGroup" });                     
-        
-        
+       
+        thisPage.gearGroup = thisPage.mainSvg.append("g").attrs({ id: "gearGroup" });                                  
         thisPage.canvas = thisPage.mainSvg.append("g").attrs({ id: "mainGroup" });
-        thisPage.populateTopics(bigRadius, topicRadius);
-        thisPage.createTopicShapes(bigRadius, topicRadius);
+       
 
-        var rings = thisPage.rings(c, topicRadius, bigRadius, "blue");
+        function getZodiacNames(){
+            var z = []
+            z.push("Capricorn");
+            z.push("Aquarius");
+            z.push("Pisces");
+            z.push("Aries");
+            z.push("Taurus");
+            z.push("Gemini");
+            z.push("Cancer");
+            z.push("Leo");
+            z.push("Virgo");
+            z.push("Libra");
+            z.push("Scorpio");
+            z.push("Sagittarius");
+            return z;
+        }
+        function getEasternZodiacNames(){
+            var z = []
+            z.push("Leopard");
+            z.push("Tiger");
+            z.push("Lion");
+            z.push("Turtle");
+            z.push("Bear");
+            z.push("Frog");
+            z.push("Octopus");
+            z.push("Owl");
+            z.push("Penguin");
+            z.push("Scorpion");
+            z.push("Shark");
+            z.push("Wolf");
+            return z;
+        }
+        const westNames = getZodiacNames();    
+        const eastNames = getEasternZodiacNames(); 
+        function getZodiacHash(folder, names) {
+     
+            var items = [];
+            names.forEach(n => {         
+                items.push([n,d3.xml(`${folder}/${n.toLowerCase()}.svg`)]);   
+            });       
+            return items;   
+        }
+       
+        const hashWest= getZodiacHash("img/zodiac",westNames);
+        const hashEast= getZodiacHash("img/wildlife/svg",eastNames);
+        var topicRadius = Math.round(bigRadius * 2.4 / hashWest.length);
+        //$("#combobox").height(topicRadius);
+        //$("#combobox").css("background-color", "yellow");
+        
+        const hypontenuseToComboCenter  = 2 * topicRadius + bigRadius + bigRadius;
+        const comboDistance = Math.sqrt(Math.pow(hypontenuseToComboCenter, 2) - Math.pow(2 * topicRadius + bigRadius, 2));
+        const comboHeight = new utilities.vector(0, -comboDistance/2)
+        const ringCenter = thisPage.center.add(comboHeight);
+        var rings = thisPage.rings(ringCenter, topicRadius, bigRadius, "red");
+
+        Promise.all(hashWest.map(x=> x[1])).then(westVals => {     
+            Promise.all(hashEast.map(x=> x[1])).then(eastVals => {          
+                var westItems = thisPage.populateTopics(hashWest.map((x, i) =>[x[0], westVals[i].documentElement]), bigRadius, topicRadius);
+                var eastItems = thisPage.populateTopics(hashEast.map((x, i) =>[x[0], eastVals[i].documentElement]), bigRadius, topicRadius);
+                var defs = thisPage.mainSvg.append("defs");
+                //thisPage.populateGradients(defs, westItems);
+                thisPage.populateGradients(defs, westItems.concat(eastItems));
+                var westCircles = thisPage.createTopicShapes(bigRadius, topicRadius, westItems, thisPage.cLeft, "left");
+                var eastCircles = thisPage.createTopicShapes(bigRadius, topicRadius, eastItems, thisPage.cRight, "right");
+                thisPage.circleClick(westCircles, bigRadius, westItems.length, thisPage.cLeft, ringCenter);
+                thisPage.circleClick(eastCircles, bigRadius, eastItems.length, thisPage.cRight, ringCenter);
+                $(".topic-icon").hide();
+                thisPage.spiral(westItems, thisPage.cLeft, d3.selectAll("#topicCircles-left .circle-container"), 1, 1100);
+                thisPage.spiral(eastItems, thisPage.cRight, d3.selectAll("#topicCircles-right .circle-container"), 1, 1200);
+                                        
+            });
+        });
+        
+        
+        //rings.concat(thisPage.rings(thisPage.cRight, topicRadius, bigRadius, "red"));
 
         thisPage.likes = thisPage.mainSvg.append("g").attrs({ id: "likesGroup" });
         thisPage.globeGroup = thisPage.mainSvg.append("g").attrs({ id: "globeGroup" });
-        var defs = thisPage.mainSvg.append("defs");
-        thisPage.populateGradients(defs, thisPage.topics);       
-       
+        
         var timer = d3.timer(function () {
             if(rings) {
                 rings.forEach(function (r, i) {
@@ -1564,7 +1608,6 @@ var page = function () {
             }
         });
     }
-
 }
 var utilities = new utilities();
 var windowPage = new page();
