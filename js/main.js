@@ -278,7 +278,9 @@ var page = function () {
         var page = this;    
         var topics = [];
         items.forEach( (x, i) => { 
-            topics.push(new thisPage.topic(x[0], x[0] +i, x[0], utilities.colorBleed(i, items.length), radius, x[1]));
+            var t = new thisPage.topic(x[0], x[0] +i, x[0], utilities.colorBleed(i, items.length), radius, x[1]);
+            t.callback = function (){};
+            topics.push(t);
         });    
         // var work = new thisPage.topic("Work", "People I've worked with.", "navy", radius);
         // work.callback = this.dropToPage;
@@ -1470,17 +1472,17 @@ var page = function () {
         })      
         return g;   
     }
-    this.circleClick = function(g, bigRadius, count, center, destination)
+    this.circleClick = function(isPartnered, g, bigRadius, count, center, destination, ringCenter, callback)
     {
         g.on("click", function (event, d) {
             var c = d3.select(this);
             if (c.attr("data-selected") == 1) {
                 d.reset()
                 thisPage.orbit(bigRadius, count, 4, 500, .60, .04, g, center);
-                return;
+                return false;
             }
 
-            d3.selectAll(".circle-container").each(function (d2, i) {
+            g.each(function (d2, i) {
                 if (d.id != this.id) {
                     var p = d2.vector;
                     var translate = p.x + "," + p.y;
@@ -1493,15 +1495,27 @@ var page = function () {
                 }
             });
             var translate = 0 + "," + 0;
-            c
-                .transition()
+            
+            c.transition()
                 .duration(250)
                 .ease(d.ease)
                 .attrs({ "transform": "translate(" + translate + ")" })
                 .attr("data-selected", 1)
-				.on("end", d.topicClick);
+                .on("end", () => {
+                    var circle = c.select("circle");
+                    const t2 =  (destination.x - circle.attr("cx")) + "," + (destination.y - circle.attr("cy"));
+                    c.transition()
+                    .duration(250)
+                    .ease(d.ease)               
+                    .on("end", d.topicClick)
+                    .attrs({ "transform": "translate("+t2+")" })
+                    .attr("data-selected", 1)
+                })
         })
+        callback(isPartnered, true, ringCenter);
+        return true;
     }
+    
     this.initialize = new function () {
 
         var c = thisPage.center;
@@ -1550,6 +1564,17 @@ var page = function () {
             z.push("Wolf");
             return z;
         }
+        function checkCombo(a, b){
+            if(a && b) {
+                var rings = thisPage.rings(ringCenter, topicRadius, bigRadius, "red");
+                var timer = d3.timer(function () {
+                    if(rings) {
+                        rings.forEach(function (r, i) { r.tick();});
+                    }
+                    if(thisPage.globe) { thisPage.globe.tick();}
+                });
+            }
+        }
         const westNames = getZodiacNames();    
         const eastNames = getEasternZodiacNames(); 
         function getZodiacHash(folder, names) {
@@ -1569,21 +1594,22 @@ var page = function () {
         
         const hypontenuseToComboCenter  = 2 * topicRadius + bigRadius + bigRadius;
         const comboDistance = Math.sqrt(Math.pow(hypontenuseToComboCenter, 2) - Math.pow(2 * topicRadius + bigRadius, 2));
-        const comboHeight = new utilities.vector(0, -comboDistance/2)
+        const comboHeight = new utilities.vector(0, -comboDistance/1.2)
         const ringCenter = thisPage.center.add(comboHeight);
-        var rings = thisPage.rings(ringCenter, topicRadius, bigRadius, "red");
+        
 
+        var isWest = false;
+        var isEast = false;
         Promise.all(hashWest.map(x=> x[1])).then(westVals => {     
             Promise.all(hashEast.map(x=> x[1])).then(eastVals => {          
                 var westItems = thisPage.populateTopics(hashWest.map((x, i) =>[x[0], westVals[i].documentElement]), bigRadius, topicRadius);
                 var eastItems = thisPage.populateTopics(hashEast.map((x, i) =>[x[0], eastVals[i].documentElement]), bigRadius, topicRadius);
                 var defs = thisPage.mainSvg.append("defs");
-                //thisPage.populateGradients(defs, westItems);
                 thisPage.populateGradients(defs, westItems.concat(eastItems));
                 var westCircles = thisPage.createTopicShapes(bigRadius, topicRadius, westItems, thisPage.cLeft, "left");
                 var eastCircles = thisPage.createTopicShapes(bigRadius, topicRadius, eastItems, thisPage.cRight, "right");
-                thisPage.circleClick(westCircles, bigRadius, westItems.length, thisPage.cLeft, ringCenter);
-                thisPage.circleClick(eastCircles, bigRadius, eastItems.length, thisPage.cRight, ringCenter);
+                isWest = thisPage.circleClick(isEast, westCircles, bigRadius, westItems.length, thisPage.cLeft, ringCenter.add(new utilities.vector(-1.2 * topicRadius, 0)), ringCenter, checkCombo);
+                isEast = thisPage.circleClick(isWest, eastCircles, bigRadius, eastItems.length, thisPage.cRight, ringCenter.add(new utilities.vector(1.2 * topicRadius, 0)), ringCenter, checkCombo);
                 $(".topic-icon").hide();
                 thisPage.spiral(westItems, thisPage.cLeft, d3.selectAll("#topicCircles-left .circle-container"), 1, 1100);
                 thisPage.spiral(eastItems, thisPage.cRight, d3.selectAll("#topicCircles-right .circle-container"), 1, 1200);
@@ -1591,22 +1617,13 @@ var page = function () {
             });
         });
         
-        
+        //thisPage.createLandings()
         //rings.concat(thisPage.rings(thisPage.cRight, topicRadius, bigRadius, "red"));
 
         thisPage.likes = thisPage.mainSvg.append("g").attrs({ id: "likesGroup" });
         thisPage.globeGroup = thisPage.mainSvg.append("g").attrs({ id: "globeGroup" });
         
-        var timer = d3.timer(function () {
-            if(rings) {
-                rings.forEach(function (r, i) {
-                    r.tick();
-                });
-            }
-            if(thisPage.globe) {
-                thisPage.globe.tick();
-            }
-        });
+        
     }
 }
 var utilities = new utilities();
